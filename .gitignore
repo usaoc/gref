@@ -5,3 +5,6 @@
 !gref-lib/
 !gref-lib/gref/
 !gref-lib/gref/private/
+!gref-test/
+!gref-test/tests/
+!gref-test/tests/gref/
