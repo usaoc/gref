@@ -1,0 +1,7 @@
+*
+!.gitignore
+!*.rkt
+!COPYING
+!gref-lib/
+!gref-lib/gref/
+!gref-lib/gref/private/
