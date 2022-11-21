@@ -7,7 +7,7 @@
 ;; offered as-is, without any warranty.
 
 (define collection 'multi)
-(define deps '("base"))
+(define deps '("base" "srfi-lib"))
 (define pkg-authors '("whmunkchan@outlook.com"))
 (define pkg-desc "Implementation part of \"gref\"")
 (define license '(GPL-3.0-or-later))

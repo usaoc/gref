@@ -19,7 +19,8 @@
          expect/rackunit
          gref/base
          racket/string
-         (only-in rackunit test-case))
+         (only-in rackunit test-case)
+         (prefix-in srfi- srfi/17))
 
 (test-case "variable"
   (check-expect (lambda ()
@@ -194,6 +195,20 @@
       (let ([bx (impersonator-box 1)]) (set! (unbox* bx) 2))))
   (check-exn exn:fail:contract?
     (lambda () (let ([bx #&1]) (set! (unbox* bx) 2)))))
+
+(test-case "SRFI 17"
+  (check-expect (let ([table #hasheq((foo . bar))])
+                  (define (getter key #:failure [failure #f])
+                    (hash-ref table key failure))
+                  (define (setter key val #:failure [_failure #f])
+                    (set! table (hash-set table key val)))
+                  (srfi-set-setter! getter setter)
+                  (rotate! (getter 'foo)
+                           (getter 'baz #:failure 'quux))
+                  table)
+                #hasheq((foo . quux) (baz . bar)))
+  (check-exn exn:fail?
+    (lambda () (define (getter) 'ignored) (set! (getter) 'ignored))))
 
 (define expect-void (expect-pred void?))
 
