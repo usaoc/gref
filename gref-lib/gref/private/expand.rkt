@@ -35,15 +35,19 @@
                        racket/base
                        (prefix-in srfi- srfi/17)))
 
+(define gref-desc-table (make-hasheqv))
+
 (define (make-gref-desc num)
-  (define base "generalized reference")
-  (match num
-    [#f (string-append "any " base)]
-    [(? exact-nonnegative-integer? (app number->string num-str))
-     (string-append num-str "-valued " base)]
-    [_ (raise-argument-error 'gref
-                             "(or/c #f exact-nonnegative-integer?)"
-                             num)]))
+  (define (make-desc)
+    (define base "generalized reference")
+    (match num
+      [#f (string-append-immutable "any " base)]
+      [(? exact-nonnegative-integer? (app number->string num-str))
+       (string-append-immutable num-str "-valued " base)]
+      [_ (raise-argument-error 'gref
+                               "(or/c #f exact-nonnegative-integer?)"
+                               num)]))
+  (hash-ref! gref-desc-table num make-desc))
 
 (define (apply-expr-trans trans . args)
   (apply syntax-local-apply-transformer trans #f 'expression #f args))
