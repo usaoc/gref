@@ -148,6 +148,20 @@
                     (ref.reader ... ref.reader0) (ref.writer ...))
        (void)))])
 
+(begin-for-syntax
+  (define-syntax-class np-expr
+    #:description "non-parenthesized expression"
+    #:commit
+    #:attributes ()
+    (pattern (~or* (_ ...) (_ ...+ . _)) #:cut #:post (~fail))
+    (pattern _:expr))
+  (define-syntax-class rest
+    #:description "rest argument"
+    #:commit
+    #:attributes (app expr val)
+    (pattern () #:with app #'#%app #:attr val #f #:attr expr #f)
+    (pattern expr:np-expr #:with app #'apply #:with val #'rest-arg)))
+
 (define-syntax-parser define-call!
   [(_:id name:id arity:exact-nonnegative-integer)
    #:do [(define arity-num (syntax-e #'arity))
@@ -163,7 +177,7 @@
    (syntax/loc this-syntax
      (define-syntax-parser name
        #:track-literals
-       [(_:id proc-expr arg0-expr ... ref:gref arg)
+       [(_:id proc-expr arg0-expr ... ref:gref arg . rest:rest)
         #:declare proc-expr (expr/c #'procedure?)
         (~@ #:declare arg0-expr expr) ...
         #:declare arg (args more-idx)
@@ -172,10 +186,12 @@
             (let-values ([(proc) proc-expr.c]
                          [(arg0) arg0-expr] ...
                          ref.binding :::
-                         [(arg.val) arg.expr] :::)
+                         [(arg.val) arg.expr] :::
+                         (?? [(rest.val) rest.expr]))
               (let-values ([(ref.store :::)
-                            (proc arg0 ... ref.reader
-                                  (?@ (?? arg.kw) arg.val) :::)])
+                            (rest.app proc arg0 ... ref.reader
+                                      (?@ (?? arg.kw) arg.val) :::
+                                      (?? rest.val))])
                 ref.writer))
             (void)))]))])
 

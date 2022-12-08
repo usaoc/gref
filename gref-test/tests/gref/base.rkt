@@ -307,6 +307,12 @@
                          #:left? #f #:repeat? #t)
                   bx)
                 #&"...foo")
+  (check-expect (let ([bx (box "...foo...")]
+                      [rest-arg (list "..." ":::")])
+                  (call! string-replace (unbox* bx)
+                         #:all? #f . rest-arg)
+                  bx)
+                #&":::foo...")
   (check-exn exn:fail:contract?
     (lambda () (let ([bx (box 1)]) (call! 'not-proc (unbox* bx))))))
 
@@ -317,6 +323,12 @@
                           #:left? #f #:repeat? #t)
                   bx)
                 #&"...foo")
+  (check-expect (let ([bx (box "...")]
+                      [rest-arg (list ":::")])
+                  (call2! string-replace "...foo..." (unbox* bx)
+                          #:all? #f . rest-arg)
+                  bx)
+                #&":::foo...")
   (check-exn exn:fail:contract?
     (lambda ()
       (let ([bx (box 1)]) (call2! 'not-proc 'arg (unbox* bx))))))
