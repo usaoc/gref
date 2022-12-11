@@ -40,12 +40,14 @@
 (test-case "define-accessor"
   (check-expect (let ([val 'init])
                   (define (val-ref) val)
+                  (define pre (shift! (foo) 'ignored))
+                  (define post (foo))
                   (define-accessor foo val-ref
                     (syntax-parser
                       [(_:id) (syntax/loc this-syntax
                                 (:set! () (_obj)
                                        val (set! val 'set)))]))
-                  (list (shift! (foo) 'ignored) (foo)))
+                  (list pre post))
                 '(init set))
   (check-expect #'(let ()
                     (define-accessor foo bar 'not-id)
@@ -54,6 +56,7 @@
 
 (test-case "gen:set!-expander"
   (check-expect (let ([val 'init])
+                  (set! (bar) 'ignored)
                   (define-syntax bar
                     (let ()
                       (struct foo ()
@@ -65,7 +68,6 @@
                                 (:set! () (_obj)
                                        val (set! val 'set)))]))])
                       (foo)))
-                  (set! (bar) 'ignored)
                   val)
                 'set)
   (check-expect #'(let-syntax

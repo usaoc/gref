@@ -15,8 +15,36 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide set! set!-values pset! pset!-values shift! rotate!
-         call! call2! inc! dec! push! mpush! pop! mpop!)
+(require (for-syntax racket/base
+                     racket/provide-transform
+                     racket/syntax
+                     syntax/datum
+                     syntax/parse
+                     syntax/transformer))
+(begin-for-syntax
+  (define-syntax-class (expr-trans out)
+    #:commit
+    #:attributes (wrapped)
+    (pattern name:id
+      #:with wrapped (format-id #'here "wrapped-~a" this-syntax
+                                #:source this-syntax)
+      #:do [(syntax-local-lift-module-end-declaration
+             (syntax/loc out
+               (define-syntax wrapped
+                 (make-expression-transformer
+                  (syntax-local-value #'name)))))])))
+(define-for-syntax (expand-expr-trans stx modes)
+  (syntax-parse stx
+    [(_:id name ...)
+     #:declare name (expr-trans this-syntax)
+     (pre-expand-export
+      (syntax/loc this-syntax (rename-out [name.wrapped name] ...))
+      modes)]))
+(define-syntax expression-transformer-out
+  (make-provide-pre-transformer expand-expr-trans))
+(provide (expression-transformer-out
+          set! set!-values pset! pset!-values shift! rotate!
+          call! call2! inc! dec! push! mpush! pop! mpop!))
 
 (require racket/unsafe/ops
          syntax/parse/define
@@ -39,7 +67,8 @@
    (syntax/loc this-syntax
      (let ()
        (let-values (pair.binding ...)
-         (let-values ([(pair.store ...) pair.val]) pair.writer))
+         (let-values ([(pair.store ...) pair.val])
+           (#%expression pair.writer)))
        ...
        (void)))])
 
@@ -60,7 +89,7 @@
      (let ()
        (let-values (pair.binding ... ...)
          (let-values ([(pair.store ... ...) pair.val])
-           pair.writer ...))
+           (#%expression pair.writer) ...))
        ...
        (void)))])
 
@@ -77,7 +106,7 @@
              (begin0 val0
                (pset!-fold ((binding ...) ...) ((store ...) ...)
                            ((writer ...) ...) (val ...)))])
-         writer0 ...)))])
+         (#%expression writer0) ...)))])
 
 (define-syntax-parser pset!
   #:track-literals
@@ -112,7 +141,7 @@
            ([(store0 ...)
              (shift!-fold ((binding ...) ...) ((store ...) ...)
                           (reader ...) (writer ...) reader1)])
-         (~? (begin0 reader0 writer0) writer0))))])
+         (~? (begin0 reader0 writer0) (#%expression writer0)))))])
 
 (begin-for-syntax
   (define-splicing-syntax-class grefs
@@ -192,7 +221,7 @@
                             (rest.app proc arg0 ... ref.reader
                                       (?@ (?? arg.kw) arg.val) :::
                                       (?? rest.val))])
-                ref.writer))
+                (#%expression ref.writer)))
             (void)))]))])
 
 (define-call! call! 0)
