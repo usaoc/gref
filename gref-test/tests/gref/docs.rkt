@@ -1,4 +1,4 @@
-#lang info
+#lang racket/base
 ;; Copyright (C) 2022 Wing Hei Chan
 
 ;; Copying and distribution of this file, with or without
@@ -6,11 +6,6 @@
 ;; the copyright notice and this notice are preserved.  This file is
 ;; offered as-is, without any warranty.
 
-(define collection 'multi)
-(define build-deps
-  '("base"
-    "doc-coverage" "expect" "rackunit-lib"
-    "gref-lib" "srfi-lib"))
-(define pkg-authors '("whmunkchan@outlook.com"))
-(define pkg-desc "Tests for \"gref\"")
-(define license '(GPL-3.0-or-later))
+(require doc-coverage gref)
+(check-all-documented 'gref/base)
+(check-all-documented 'gref/syntax)

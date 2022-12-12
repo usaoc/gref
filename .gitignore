@@ -1,7 +1,11 @@
 *
 !.gitignore
 !*.rkt
+!*.scrbl
 !COPYING
+!gref-doc/
+!gref-doc/scribblings/
+!gref-doc/scribblings/gref/
 !gref-lib/
 !gref-lib/gref/
 !gref-lib/gref/private/

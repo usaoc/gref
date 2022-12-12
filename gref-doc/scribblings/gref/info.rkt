@@ -6,11 +6,4 @@
 ;; the copyright notice and this notice are preserved.  This file is
 ;; offered as-is, without any warranty.
 
-(define collection 'multi)
-(define build-deps
-  '("base"
-    "doc-coverage" "expect" "rackunit-lib"
-    "gref-lib" "srfi-lib"))
-(define pkg-authors '("whmunkchan@outlook.com"))
-(define pkg-desc "Tests for \"gref\"")
-(define license '(GPL-3.0-or-later))
+(define scribblings '(("gref.scrbl")))

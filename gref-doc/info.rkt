@@ -7,10 +7,12 @@
 ;; offered as-is, without any warranty.
 
 (define collection 'multi)
+(define deps '("base"))
 (define build-deps
-  '("base"
-    "doc-coverage" "expect" "rackunit-lib"
-    "gref-lib" "srfi-lib"))
+  '("scribble-lib"
+    "gref-lib" "srfi-lib"
+    "algol60" "glass"
+    "lens-doc" "r5rs-doc" "r6rs-doc" "racket-doc" "srfi-doc"))
 (define pkg-authors '("whmunkchan@outlook.com"))
-(define pkg-desc "Tests for \"gref\"")
+(define pkg-desc "Documentation part of \"gref\"")
 (define license '(GPL-3.0-or-later))
