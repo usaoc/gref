@@ -3,6 +3,7 @@
 !*.rkt
 !*.scrbl
 !COPYING
+!README*
 !gref-doc/
 !gref-doc/scribblings/
 !gref-doc/scribblings/gref/

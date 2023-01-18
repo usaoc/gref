@@ -1,0 +1,38 @@
+# Copyright (C) 2022 Wing Hei Chan
+
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved.  This file is offered as-is,
+# without any warranty.
+
+#+title: Gref
+
+Gref is a proof-of-concept implementation of generalized references
+for Racket.  For detailed documentation, refer to [[https://docs.racket-lang.org/gref/index.html][the reference]].
+
+* Introduction
+  As commonly known by Lispers, generalized references are infamously
+  present in many Lisp systems, most notably [[http://www.lispworks.com/documentation/HyperSpec/Body/05_a.htm][Common Lisp]] with its
+  magical modify macros such as [[http://www.lispworks.com/documentation/HyperSpec/Body/m_setf_.htm][~setf~]].  They not only serve practical
+  purposes, but also showcase powerful capabilities of syntactic
+  abstraction, [[https://docs.racket-lang.org/guide/macros.html][at which Racket excels]].  Nonetheless, those with a
+  functional mind might prefer functional references even more
+  infamously present in [[https://en.wikibooks.org/wiki/Haskell/Lenses_and_functional_references][Haskell]], for which see [[https://github.com/jackfirth/lens][Lens]] and [[https://github.com/jackfirth/glass][Glass]].
+
+* How to Use
+  This library can be installed through [[https://docs.racket-lang.org/pkg/index.html][the Racket package manager]].
+  The main entry points are the ~gref/base~ and ~gref/syntax~ modules
+  respectively for base functionalities and syntactic extensions, and
+  the ~gref~ module combines these modules.
+
+  This library is split into the following packages:
+
+  - [[file:gref-doc/][=gref-doc=]] provides the documentation;
+  - [[file:gref-lib/][=gref-lib=]] provides the implementation;
+  - [[file:gref-test/][=gref-test=]] provides the tests;
+  - [[file:gref/][=gref=]] combines the non-test packages.
+
+* Contribute
+  [[https://github.com/usaoc/gref/issues][Submit an issue]] for bug reports and general discussion.  [[https://github.com/usaoc/gref/pulls][Submit a
+  pull request]] for patches.  Otherwise, [[mailto:whmunkchan@outlook.com][send an email]] with patches
+  attached if any.
