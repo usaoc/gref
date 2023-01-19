@@ -75,7 +75,6 @@
 (define-syntax-class (maybe-expr/c contract-expr)
   #:commit
   #:attributes (c)
-  (pattern c:expr #:when (not contract-expr))
   (pattern expr
     #:declare expr (expr/c contract-expr)
     #:with c (syntax/loc this-syntax

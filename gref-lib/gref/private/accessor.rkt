@@ -70,8 +70,7 @@
      #:declare hash-expr (expr/c #'hash?)
      #:declare failure-expr (expr/c #'failure-result/c)
      #:attr failure (and (datum failure-expr) #'failure)
-     #:with hash #'hash
-     #:with mutable-hash #'hash
+     #:with mutable-hash (syntax/loc #'hash-expr hash)
      #:declare mutable-hash (expr/c #'mutable/c)
      (syntax/loc this-syntax
        (:set! ([(hash) hash-expr.c]
@@ -82,10 +81,17 @@
               (hash-set! mutable-hash.c key obj)))]))
 
 (begin-for-syntax
+  (define-splicing-syntax-class obj?
+    #:attributes (obj? obj?-str)
+    (pattern (~seq #:obj? obj?:id)
+      #:with obj?-str (datum->syntax
+                       #'here
+                       (symbol->immutable-string (syntax-e #'obj?))
+                       #'obj?)))
   (define-splicing-syntax-class opt
-    #:attributes (type obj/c vector/c)
+    #:attributes (type obj? obj?-str vector/c)
     (pattern (~seq (~alt (~optional (~seq #:type type:str))
-                         (~optional (~seq #:obj/c obj/c:id))
+                         (~optional :obj?)
                          (~optional (~seq #:vector/c vector/c:id)))
                    ...))))
 
@@ -126,11 +132,8 @@
          [(_:id vector-expr pos-expr)
           #:declare vector-expr (expr/c #'vector/c)
           #:declare pos-expr (expr/c #'exact-nonnegative-integer?)
-          #:with vector #'vector
-          #:with mutable-vector #'vector
+          #:with mutable-vector (syntax/loc #'vector-expr vector)
           #:declare mutable-vector (expr/c #'mutable/c)
-          #:with obj #'obj
-          #:declare obj (maybe-expr/c (~? #'opt.obj/c #f))
           (syntax/loc this-syntax
             (:set! ([(vector pos)
                      (if (variable-reference-from-unsafe?
@@ -153,11 +156,17 @@
                              (values vector pos))))])
                    (obj)
                    (vector-ref vector pos)
-                   (vector-set! mutable-vector.c pos obj.c)))])))])
+                   (let ()
+                     (~? (unless (variable-reference-from-unsafe?
+                                  (#%variable-reference))
+                           (unless (opt.obj? obj)
+                             (raise-argument-error
+                              'name opt.obj?-str obj))))
+                     (vector-set! mutable-vector.c pos obj))))])))])
 
-(define-vector-ref bytes #:type "byte string" #:obj/c byte?)
+(define-vector-ref bytes #:type "byte string" #:obj? byte?)
 
-(define-vector-ref string #:obj/c char?)
+(define-vector-ref string #:obj? char?)
 
 (define-vector-ref vector)
 
@@ -169,8 +178,7 @@
   (syntax-parser
     [(_:id box-expr)
      #:declare box-expr (maybe-expr/c box/c)
-     #:with box #'box
-     #:with mutable-box #'box
+     #:with mutable-box (syntax/loc #'box-expr box)
      #:declare mutable-box (maybe-expr/c #'mutable/c)
      #:with unbox unbox
      #:with set-box! set-box!

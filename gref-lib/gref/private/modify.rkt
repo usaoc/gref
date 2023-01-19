@@ -206,13 +206,12 @@
    (syntax/loc this-syntax
      (define-syntax-parser name
        #:track-literals
-       [(_:id proc-expr arg0-expr ... ref:gref arg . rest:rest)
-        #:declare proc-expr (expr/c #'procedure?)
+       [(_:id proc-expr:expr arg0-expr ... ref:gref arg . rest:rest)
         (~@ #:declare arg0-expr expr) ...
         #:declare arg (args more-idx)
         (syntax/loc this-syntax
           (let ()
-            (let-values ([(proc) proc-expr.c]
+            (let-values ([(proc) proc-expr]
                          [(arg0) arg0-expr] ...
                          ref.binding :::
                          [(arg.val) arg.expr] :::
@@ -255,7 +254,9 @@
   (syntax-parser
     #:track-literals
     [(_:id ref:gref)
-     #:with reader #'ref.reader
+     #:with reader (datum->syntax #'ref.reader
+                                  (syntax-e #'ref.reader)
+                                  #'ref)
      #:declare reader (maybe-expr/c pair?)
      #:with car car
      #:with cdr cdr
