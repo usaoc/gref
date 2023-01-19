@@ -20,7 +20,6 @@
 @(require scribblings/gref/bib
           scribblings/gref/example
           scribblings/gref/lib
-          scribblings/gref/rnrs
           scribblings/gref/tech
           (for-label gref/base
                      racket/contract/base
@@ -45,9 +44,9 @@ the following @other-doc[@lib-path["algol60/algol60"]] program:
 
 Above, @tt{foo[0]} is an @tech{l-value} that @tech{represents} a
 @tech{location}, and thus can be both read and write.  The concept of
-@deftech{locations} is already defined by Scheme reports (see
-@rnrs[5 6] and @rnrs[6 8]), so it is not difficult to imagine a
-concept similar to @tech{l-values}.  Indeed,
+@deftech{locations} is already defined in Racket (see
+@secref[#:doc rkt-ref "vars-and-locs"]), so it is not difficult to
+imagine a concept similar to @tech{l-values}.  Indeed,
 @tech{generalized references}, also known as @tech/rep{places}, are
 provided by Lisp Machine Lisp--inspired Lisps.
 
