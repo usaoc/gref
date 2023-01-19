@@ -72,7 +72,7 @@ contexts (see @racket[define-accessor] for the exact behaviors).
                      [val any/c])]{
  @tech{Represents} the association for @racket[key] in @racket[hash].
  Note that @racket[failure-result] is ignored by the
- @tech/rep{writer}. The @tech/rep{writer} further requires
+ @tech/rep{writer}.  The @tech/rep{writer} further requires
  @racket[hash] to be @racket[(not/c immutable?)].}
 
 @defacc[(set! (bytes-ref bytes pos) val)

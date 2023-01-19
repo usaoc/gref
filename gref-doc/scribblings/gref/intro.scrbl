@@ -47,7 +47,7 @@ Above, @tt{foo[0]} is an @tech{l-value} that @tech{represents} a
 @tech{location}, and thus can be both read and write.  The concept of
 @deftech{locations} is already defined by Scheme reports (see
 @rnrs[5 6] and @rnrs[6 8]), so it is not difficult to imagine a
-concept similar to @tech{l-values}. Indeed,
+concept similar to @tech{l-values}.  Indeed,
 @tech{generalized references}, also known as @tech/rep{places}, are
 provided by Lisp Machine Lisp--inspired Lisps.
 
@@ -132,7 +132,7 @@ generally be @void-const following Racket's convention (see
 
 Before the @tech/rep{accesses} are performed, the inner
 @racket[unbox*] expression is evaluated exactly once and validated to
-be @racket[(and/c box? (not/c impersonator?))]. Then, the
+be @racket[(and/c box? (not/c impersonator?))].  Then, the
 @tech/rep{accesses} are performed without unnecessary repeated
 evaluation.  This capability further enables @tech{modify macros}
 like @racket[shift!] and @racket[rotate!].

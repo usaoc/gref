@@ -84,7 +84,7 @@ is always @|void-const|.
  @racket[ref] to the @math{n}th @racket[ref] @tech{parallelly}, then
  @tech{stores} the results of @racket[val] to the last @racket[ref].
  Returns the @tech{values} originally @tech/rep{stored} in the first
- @racket[ref]. The first @racket[ref] determines the @var[number].
+ @racket[ref].  The first @racket[ref] determines the @var[number].
 
  @examples/gref[(define foo (box 1))
                 (define bar (box 2))
@@ -155,7 +155,7 @@ is always @|void-const|.
          #:grammar [(ref @#,racket[gref])]
          #:contracts ([val any/c])]{
  Prepends @racket[val] to the @tech/rep{value} @tech/rep{stored} in
- @racket[ref]. That is, it is equivalent to
+ @racket[ref].  That is, it is equivalent to
  @racket[(call2! cons val ref)].}
 
 @defform[(mpush! val ref)
