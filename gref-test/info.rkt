@@ -13,4 +13,4 @@
     "gref-lib" "srfi-lib"))
 (define pkg-authors '("whmunkchan@outlook.com"))
 (define pkg-desc "Tests for \"gref\"")
-(define license '(GPL-3.0-or-later))
+(define license 'GPL-3.0-or-later)

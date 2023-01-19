@@ -11,4 +11,4 @@
 (define implies deps)
 (define pkg-authors '("whmunkchan@outlook.com"))
 (define pkg-desc "Generalized references for Racket")
-(define license '(GPL-3.0-or-later))
+(define license 'GPL-3.0-or-later)

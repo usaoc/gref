@@ -15,4 +15,4 @@
     "lens-doc" "r5rs-doc" "r6rs-doc" "racket-doc" "srfi-doc"))
 (define pkg-authors '("whmunkchan@outlook.com"))
 (define pkg-desc "Documentation part of \"gref\"")
-(define license '(GPL-3.0-or-later))
+(define license 'GPL-3.0-or-later)
