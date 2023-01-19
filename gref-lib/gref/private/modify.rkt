@@ -264,7 +264,7 @@
          (let ([pair reader.c])
            (begin0 (car pair)
              (let-values ([(ref.store ...) (cdr pair)])
-               ref.writer)))))]))
+               (#%expression ref.writer))))))]))
 
 (define-syntax pop! (make-pop! #'pair? #'unsafe-car #'unsafe-cdr))
 
