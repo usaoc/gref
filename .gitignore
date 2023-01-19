@@ -4,6 +4,7 @@
 !*.scrbl
 !COPYING
 !README*
+!gref/
 !gref-doc/
 !gref-doc/scribblings/
 !gref-doc/scribblings/gref/
