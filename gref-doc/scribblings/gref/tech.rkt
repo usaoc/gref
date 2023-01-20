@@ -24,42 +24,36 @@
 (require racket/string
          scribble/core
          scribble/decode
-         scribble/manual
-         (for-syntax racket/base
-                     racket/string
-                     syntax/transformer))
+         scribble/manual)
 
-(define-syntax table
-  (make-variable-like-transformer
-   (datum->syntax
-    #'here
-    (make-immutable-hash
-     `(,@(for/list ([(base suffixes)
-                     #hasheq(("access" . ("es"))
-                             ("store" . ("ed" "ing"))
-                             ("value" . ("ed"))
-                             ("visit" . ("ed")))]
-                    #:do [(define root
-                            (string-trim base "e" #:left? #f))]
-                    [suffix (in-list suffixes)])
-           `(,(string-append root suffix) . ,base))
-       ,@(for/list ([(abbrev prefix)
-                     #hasheq(("optic" . "functional ")
-                             ("place" . "generalized "))])
-           `(,abbrev . ,(string-append prefix "reference")))
-       ,@(for*/list ([(prefix abbrevs)
-                      #hasheq(("evaluation " . ("order"))
-                              ("generalized " . ("reference"))
-                              ("lexical " . ("context"))
-                              ("store " . ("variable")))]
-                     [abbrev (in-list abbrevs)])
-           `(,abbrev . ,(string-append prefix abbrev)))
-       ,@(for*/list ([(abbrevs suffix)
-                      #hasheq((("getter" "setter") . " procedure")
-                              (("reader" "writer") . " expression"))]
-                     [abbrev (in-list abbrevs)])
-           `(,abbrev . ,(string-append abbrev suffix)))))
-    #'here)))
+(define table
+  (for*/hash ([(fn table)
+               (in-hash
+                (hasheq
+                 (lambda (base suffix)
+                   (define root (string-trim base "e" #:left? #f))
+                   (values (string-append root suffix) base))
+                 #hasheq(("access" . ("es"))
+                         ("store" . ("ed" "ing"))
+                         ("value" . ("ed"))
+                         ("visit" . ("ed")))
+                 (lambda (abbrev prefix)
+                   (values abbrev (string-append prefix "reference")))
+                 #hasheq(("optic" . ("functional "))
+                         ("place" . ("generalized ")))
+                 (lambda (prefix abbrev)
+                   (values abbrev (string-append prefix abbrev)))
+                 #hasheq(("evaluation " . ("order"))
+                         ("generalized " . ("reference"))
+                         ("lexical " . ("context"))
+                         ("store " . ("variable")))
+                 (lambda (suffix abbrev)
+                   (values abbrev (string-append abbrev suffix)))
+                 #hasheq((" procedure" . ("getter" "setter"))
+                         (" expression" . ("reader" "writer")))))]
+              [(left rights) (in-hash table)]
+              [(right) (in-list rights)])
+    (fn left right)))
 
 (define ((make-tech/rep tech) . pres)
   (define cont (decode-content pres))
