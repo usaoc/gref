@@ -165,10 +165,10 @@
                      (if (variable-reference-from-unsafe?
                           (#%variable-reference))
                          (vector-set! mutable-vector pos obj)
-                         (begin
-                           (~? (check-obj obj))
-                           (vector-set! mutable-vector.c pos obj
-                                        )))))]))))])
+                         (vector-set! mutable-vector.c pos
+                                      (begin
+                                        (~? (check-obj obj))
+                                        obj)))))]))))])
 
 (define-vector-ref bytes #:type "byte string" #:obj? byte?)
 
