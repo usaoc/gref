@@ -85,7 +85,8 @@ not within the dynamic extent of a macro transformation")
      (lambda ()
        (syntax/loc this-syntax
          (:set! (ref.binding ... ...) (ref.store ... ...)
-                (values ref.reader ...) (void ref.writer ...))))))
+                (values ref.reader ...)
+                (let () ref.writer ... (void)))))))
   (pattern (acc . _)
     #:declare acc (static set!-expander? #f)
     #:cut
