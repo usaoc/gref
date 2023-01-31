@@ -16,7 +16,7 @@
 ;; <https://www.gnu.org/licenses/>.
 
 (require gref/private/define
-         gref/private/literal
+         (only-in gref/private/literal :set!)
          (for-syntax gref/private/expand
                      (only-in gref/private/generic
                               gen:set!-expander)))

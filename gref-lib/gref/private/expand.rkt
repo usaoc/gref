@@ -64,6 +64,7 @@
   #:description (make-gref-desc num)
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
+  #:literals (%values)
   (pattern (~fail #:when (syntax-transforming?))
     #:cut
     #:post (~fail "\
@@ -76,6 +77,15 @@ not within the dynamic extent of a macro transformation")
     (apply-expr-trans
      (lambda ()
        (syntax/loc this-syntax (:set! () (obj) id (set! id obj))))))
+  (pattern (%values ref:gref ...)
+    #:cut
+    #:when (or (not num) (= (length (datum (ref ...))) num))
+    #:with ::set!-form
+    (apply-expr-trans
+     (lambda ()
+       (syntax/loc this-syntax
+         (:set! (ref.binding ... ...) (ref.store ... ...)
+                (values ref.reader ...) (void ref.writer ...))))))
   (pattern (acc . _)
     #:declare acc (static set!-expander? #f)
     #:cut

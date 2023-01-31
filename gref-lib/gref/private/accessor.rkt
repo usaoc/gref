@@ -30,21 +30,12 @@
          racket/unsafe/ops
          syntax/parse/define
          (for-syntax gref/private/class
-                     gref/private/expand
                      racket/base
                      racket/match
                      racket/symbol
                      racket/syntax
                      syntax/datum
                      syntax/parse))
-
-(define-accessor %values values
-  (syntax-parser
-    #:track-literals
-    [(_:id ref:gref ...)
-     (syntax/loc this-syntax
-       (:set! (ref.binding ... ...) (ref.store ... ...)
-              (values ref.reader ...) (void ref.writer ...)))]))
 
 (define-for-syntax (make-mcar mcar set-mcar!)
   (syntax-parser

@@ -15,9 +15,12 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide :set!)
+(provide :set! %values)
 
-(require (for-syntax racket/base))
+(require (for-syntax racket/base
+                     syntax/transformer))
 
 (define-syntax (:set! stx)
   (raise-syntax-error #f "not allowed as an expression" stx))
+
+(define-syntax %values (make-variable-like-transformer #'values))
