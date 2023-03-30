@@ -77,7 +77,7 @@ not within the dynamic extent of a macro transformation")
     (apply-expr-trans
      (lambda ()
        (syntax/loc this-syntax (:set! () (obj) id (set! id obj))))))
-  (pattern (%values ref:gref ...)
+  (pattern (%values ~! ref:gref ...)
     #:cut
     #:when (or (not num) (= (length (datum (ref ...))) num))
     #:with ::set!-form
@@ -86,7 +86,7 @@ not within the dynamic extent of a macro transformation")
        (syntax/loc this-syntax
          (:set! (ref.binding ... ...) (ref.store ... ...)
                 (values ref.reader ...)
-                (let () ref.writer ... (void)))))))
+                (#%expression (begin ref.writer ... (void))))))))
   (pattern (acc . _)
     #:declare acc (static set!-expander? #f)
     #:cut
