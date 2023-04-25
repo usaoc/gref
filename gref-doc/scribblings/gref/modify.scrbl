@@ -115,7 +115,7 @@ is always @|void-const|.
                           arg-expr)]
           #:contracts ([proc procedure?]
                        [arg-expr any/c]
-                       [arg-list-expr any/c])]{
+                       [arg-list-expr list?])]{
  Applies (see
  @secref[#:doc rkt-guide "Function_Calls__Procedure_Applications_"])
  @racket[proc] to the @tech/rep{value} @tech/rep{stored} in
@@ -133,7 +133,7 @@ is always @|void-const|.
           #:contracts ([proc procedure?]
                        [arg0-expr any/c]
                        [arg-expr any/c]
-                       [arg-list-expr any/c])]{
+                       [arg-list-expr list?])]{
  Like @racket[call!], but with @racket[arg0-expr] as the first
  non-keyword argument.}
 
