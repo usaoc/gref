@@ -123,15 +123,28 @@ generally be @void-const following Racket's convention (see
 @examples/gref[#:label @elem{
                 As an example, consider the @tech{modify macro}
                 @racket[call!]:}
+               (define (printing-box val #:name name)
+                 (define (printing-unbox bx val)
+                   (printf "unbox: ~a\n" name)
+                   val)
+                 (define (printing-set-box! bx val)
+                   (printf "set-box!: ~a\n" name)
+                   val)
+                 (impersonate-box (box val)
+                                  printing-unbox
+                                  printing-set-box!))
                (define box-of-box
-                 (box (box #hasheq((foo . "bar")))))
-               (call! hash-update (unbox* (unbox* box-of-box))
-                      'foo (compose1 string->symbol string-upcase))
-               box-of-box]
+                 (printing-box (printing-box #hasheq((foo . "bar"))
+                                             #:name 'inner)
+                               #:name 'outer))
+               (call! hash-update
+                      (unbox (unbox box-of-box)) 'foo
+                      (compose1 string->symbol string-upcase))
+               (unbox (unbox box-of-box))]
 
-Before the @tech/rep{accesses} are performed, the inner
-@racket[unbox*] expression is evaluated exactly once and validated to
-be @racket[(and/c box? (not/c impersonator?))].  Then, the
+Before the @tech/rep{accesses} are performed, the outer
+@tech[#:doc rkt-ref]{box} is @racket[unbox]ed exactly once and its
+content is validated to be @racket[box?].  Then, the
 @tech/rep{accesses} are performed without unnecessary repeated
-evaluation.  This capability further enables @tech{modify macros}
-like @racket[shift!] and @racket[rotate!].
+evaluation.  This capability further enables @tech{modify macros} like
+@racket[shift!] and @racket[rotate!].
