@@ -96,8 +96,8 @@ is always @|void-const|.
          #:grammar [(ref @#,racket[(gref _number)])]]{
  @tech{Stores} the @tech{values} @tech/rep{stored} in the @math{n+1}th
  @racket[ref] to the @math{n}th @racket[ref] @tech{parallelly}, then
- @tech{stores} the values originally @tech/rep{stored} in the first
- @racket[ref] to the last @racket[ref].  The first @racket[ref]
+ @tech{stores} the @tech{values} originally @tech/rep{stored} in the
+ first @racket[ref] to the last @racket[ref].  The first @racket[ref]
  determines the @var[number].
 
  @examples/gref[(define foo (box 1))
