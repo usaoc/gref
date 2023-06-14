@@ -78,11 +78,13 @@
 (define-syntax-parser defcls/alias
   #:literals ([= _])
   [(_:id name:id alias:id (= . subform) pre:expr ...)
+   #:with name-def
    (syntax/loc this-syntax
-     (begin
-       (defcls (name . subform) pre ...)
-       (defcls (alias . subform)
-         "An alias for " (racket name) ".")))])
+     (defcls (name . subform) pre ...))
+   #:with alias-def
+   (syntax/loc this-syntax
+     (defcls (alias . subform) "An alias for " (racket name) "."))
+   #'(begin name-def alias-def)])
 
 (define-syntax-parser defsubtogether
   [(_:id [def:expr ...+] pre:expr ...)

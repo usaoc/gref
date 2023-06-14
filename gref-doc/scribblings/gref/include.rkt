@@ -24,9 +24,9 @@
                      syntax/parse))
 
 (begin-for-syntax
-  (define-syntax-class mod
+  (define-syntax-class (mod out)
     #:commit
-    #:attributes (mod)
+    #:attributes (inc)
     (pattern _:id
       #:with path (datum->syntax
                    #f
@@ -35,8 +35,10 @@
                                    (syntax-e this-syntax))
                                   ".scrbl")
                    #'here)
-      #:with mod (syntax/loc this-syntax (lib path)))))
+      #:with mod (syntax/loc this-syntax (lib path))
+      #:with inc (syntax/loc out (include-section mod)))))
 
 (define-syntax-parser include/gref
-  [(_:id mod:mod ...+)
-   (syntax/loc this-syntax (begin (include-section mod.mod) ...))])
+  [(_:id mod ...+)
+   #:declare mod (mod this-syntax)
+   #'(begin mod.inc ...)])

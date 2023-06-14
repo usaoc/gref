@@ -106,8 +106,6 @@
              [stx (values (make-message0-str (syntax-e stx)) stx)]))]
    #:with %name (vector-id "%~a-ref")
    #:with name (vector-id "~a-ref")
-   #:with check-vector+pos (vector-id "check-~a+pos" #'here)
-   #:attr check-obj (and (datum opt.obj?) #'check-obj)
    #:with vector-expr (vector-id "~a-expr" #'here)
    #:with vector-expr.c (vector-id "~a-expr.c" #'here)
    #:with vector/c (or (datum opt.vector/c) (vector-id "~a?"))
@@ -117,49 +115,57 @@
    #:with message (datum->syntax #'here message-str #'here)
    #:with message0 (datum->syntax #'here message0-str #'here)
    #:with type type
+   #:with check-vector+pos (vector-id "check-~a+pos" #'here)
+   #:with check-vector+pos-def
    (syntax/loc this-syntax
-     (begin
-       (define (check-vector+pos vector pos)
-         (let ([len (vector-length vector)])
-           (unless (and (fixnum? pos) (unsafe-fx< pos len))
-             (if (unsafe-fx= len 0)
-                 (raise-arguments-error 'name message0
-                                        "index" pos
-                                        type vector)
-                 (raise-arguments-error 'name message
-                                        "index" pos
-                                        "valid range"
-                                        (unquoted-printing-string
-                                         (vector-valid-range len))
-                                        type vector)))))
-       (~? (define (check-obj obj)
-             (unless (opt.obj? obj)
-               (raise-argument-error 'name opt.obj?-str obj))))
-       (define-accessor %name name
-         (syntax-parser
-           [(_:id vector-expr pos-expr)
-            #:declare vector-expr (expr/c #'vector/c)
-            #:declare pos-expr (expr/c #'exact-nonnegative-integer?)
-            #:with mutable-vector (syntax/loc #'vector-expr vector)
-            #:declare mutable-vector (expr/c #'mutable/c)
-            (syntax/loc this-syntax
-              (:set! ([(vector pos)
-                       (if (variable-reference-from-unsafe?
-                            (#%variable-reference))
-                           (values vector-expr pos-expr)
-                           (let ([vector vector-expr.c]
-                                 [pos pos-expr.c])
-                             (check-vector+pos vector pos)
-                             (values vector pos)))])
-                     (obj)
-                     (vector-ref vector pos)
+     (define (check-vector+pos vector pos)
+       (let ([len (vector-length vector)])
+         (unless (and (fixnum? pos) (unsafe-fx< pos len))
+           (if (unsafe-fx= len 0)
+               (raise-arguments-error 'name message0
+                                      "index" pos
+                                      type vector)
+               (raise-arguments-error 'name message
+                                      "index" pos
+                                      "valid range"
+                                      (unquoted-printing-string
+                                       (vector-valid-range len))
+                                      type vector))))))
+   #:attr check-obj (and (datum opt.obj?) #'check-obj)
+   #:attr check-obj-def
+   (and (datum check-obj)
+        (syntax/loc this-syntax
+          (define (check-obj obj)
+            (unless (opt.obj? obj)
+              (raise-argument-error 'name opt.obj?-str obj)))))
+   #:with accessor-def
+   (syntax/loc this-syntax
+     (define-accessor %name name
+       (syntax-parser
+         [(_:id vector-expr pos-expr)
+          #:declare vector-expr (expr/c #'vector/c)
+          #:declare pos-expr (expr/c #'exact-nonnegative-integer?)
+          #:with mutable-vector (syntax/loc #'vector-expr vector)
+          #:declare mutable-vector (expr/c #'mutable/c)
+          (syntax/loc this-syntax
+            (:set! ([(vector pos)
                      (if (variable-reference-from-unsafe?
                           (#%variable-reference))
-                         (vector-set! mutable-vector pos obj)
-                         (vector-set! mutable-vector.c pos
-                                      (begin
-                                        (~? (check-obj obj))
-                                        obj)))))]))))])
+                         (values vector-expr pos-expr)
+                         (let ([vector vector-expr.c]
+                               [pos pos-expr.c])
+                           (check-vector+pos vector pos)
+                           (values vector pos)))])
+                   (obj)
+                   (vector-ref vector pos)
+                   (if (variable-reference-from-unsafe?
+                        (#%variable-reference))
+                       (vector-set! mutable-vector pos obj)
+                       (vector-set! mutable-vector.c pos
+                                    (begin
+                                      (~? (check-obj obj))
+                                      obj)))))])))
+   #'(begin check-vector+pos-def (~? check-obj-def) accessor-def)])
 
 (define-vector-ref bytes #:type "byte string" #:obj? byte?)
 
