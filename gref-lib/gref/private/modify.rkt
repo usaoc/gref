@@ -94,18 +94,16 @@
        (void)))])
 
 (define-syntax-parser pset!-fold
-  [(_:id () () () ()) (syntax/loc this-syntax #f)]
-  [(_:id ((binding0:binding ...) (binding:binding ...) ...)
-         ((store0:id ...) (store:id ...) ...)
-         ((writer0:expr ...) (writer:expr ...) ...)
-         (val0:expr val:expr ...))
+  [(_ () () () ()) (syntax/loc this-syntax (void))]
+  [(_ ((binding0 ...) bindings ...) ((store0 ...) stores ...)
+      ((writer0 ...) writers ...) (val0 val ...))
    (syntax/loc this-syntax
      (let-values (binding0 ...)
        (let-values
            ([(store0 ...)
              (begin0 val0
-               (pset!-fold ((binding ...) ...) ((store ...) ...)
-                           ((writer ...) ...) (val ...)))])
+               (pset!-fold (bindings ...) (stores ...)
+                           (writers ...) (val ...)))])
          (#%expression writer0) ...)))])
 
 (define-syntax-parser pset!
@@ -129,19 +127,17 @@
        (void)))])
 
 (define-syntax-parser shift!-fold
-  [(_:id () () () () reader:expr) (syntax/loc this-syntax reader)]
-  [(_:id ((binding0:binding ...) (binding:binding ...) ...)
-         ((store0:id ...) (store:id ...) ...)
-         (reader1:expr reader:expr ...)
-         (writer0:expr writer:expr ...)
-         (~optional reader0:expr))
+  [(_ () () () () reader) (syntax/loc this-syntax reader)]
+  [(_ ((binding0 ...) bindings ...) ((store0 ...) stores ...)
+      (reader1 reader ...) (writer0 writer ...)
+      (~optional reader0))
    (syntax/loc this-syntax
      (let-values (binding0 ...)
        (let-values
            ([(store0 ...)
-             (shift!-fold ((binding ...) ...) ((store ...) ...)
+             (shift!-fold (bindings ...) (stores ...)
                           (reader ...) (writer ...) reader1)])
-         (~? (begin0 reader0 writer0) (#%expression writer0)))))])
+         (begin0 (~? reader0 (void)) writer0))))])
 
 (begin-for-syntax
   (define-splicing-syntax-class grefs
@@ -172,10 +168,8 @@
   #:track-literals
   [(_:id ref:grefs)
    (syntax/loc this-syntax
-     (let ()
-       (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
-                    (ref.reader ... ref.reader0) (ref.writer ...))
-       (void)))])
+     (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
+                  (ref.reader ... ref.reader0) (ref.writer ...)))])
 
 (begin-for-syntax
   (define-syntax-class np-expr
