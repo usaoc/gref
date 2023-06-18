@@ -24,7 +24,6 @@
           (for-label gref/base
                      racket/contract/base
                      (except-in syntax/parse integer)
-                     (prefix-in srfi- srfi/17)
                      (subtract-in (except-in racket/base ...) gref)))
 
 @title[#:tag "introduction"]{Introduction}
@@ -63,25 +62,25 @@ focuses on the technical aspects of @tech{generalized references}.
 
 The simplest implementation of @tech{generalized references} is as in
 @hyperlink[@collection-file-path["srfi-17.html" "srfi" "scribblings" "srfi-std"]]{SRFI 17},
-most faithfully resembling the original proposal by @citet[lisp-mac].
+resembling the original proposal by @citet[lisp-mac] to an extent.
 That is, a @deftech{getter procedure} can be associated with a
 @deftech{setter procedure}, where
 
-@racketblock[(srfi-set! (_proc _arg ...) _val)]
+@racketblock[(_proc _arg ...)]
 
-is defined as
+corresponds to
 
 @racketblock[((_setter _proc) _arg ... _val)]
 
 such that @var[setter] maps the @tech/rep{getter} to
 @tech/rep{setter}.  This is a simple yet elegant design.
-Unfortunately, more complicated @tech/rep{accesses} require a more
-expressive design.  For this reason, Gref has instead adopted the
-full-blown @tech[#:doc rkt-ref]{macro} approach of Lisp Machine Lisp,
-which is backward-compatible with the SRFI-17 approach.  In Gref, a
-@deftech{generalized reference} corresponding to some @tech{locations}
-where some @tech{values} are @deftech/rep{stored} consists of four
-items:
+Unfortunately, this approach suffers from the fact that the
+@tech/rep{setter} must be dynamically resolved.  Instead, Gref has
+adopted a full-blown @tech[#:doc rkt-ref]{macro} approach similar to
+that of Lisp Machine Lisp, which allows for static resolution and
+more.  In Gref, a @deftech{generalized reference} corresponding to
+some @tech{locations} where some @tech{values} are
+@deftech/rep{stored} consists of four items:
 
 @itemlist[
  #:style 'ordered

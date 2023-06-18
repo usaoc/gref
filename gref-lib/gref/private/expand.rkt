@@ -32,8 +32,7 @@
          syntax/parse
          (for-syntax racket/base)
          (for-template gref/private/literal
-                       racket/base
-                       (prefix-in srfi- srfi/17)))
+                       racket/base))
 
 (define gref-desc-table (make-hasheqv))
 
@@ -92,21 +91,7 @@ not within the dynamic extent of a macro transformation")
     #:cut
     #:with ::set!-form
     (apply-expr-trans set!-expand (datum acc.value) this-syntax)
-    #:when (or (not num) (= (length (datum (store ...))) num)))
-  (pattern (getter-expr:expr arg)
-    #:declare arg (args 0)
-    #:cut
-    #:when (or (not num) (= num 1))
-    #:with ::set!-form
-    (apply-expr-trans
-     (lambda ()
-       (syntax/loc this-syntax
-         (:set! ([(getter) getter-expr]
-                 [(arg.val) arg.expr] ...)
-                (obj)
-                (getter (~@ (~? arg.kw) arg.val) ...)
-                ((srfi-setter getter)
-                 (~@ (~? arg.kw) arg.val) ... obj)))))))
+    #:when (or (not num) (= (length (datum (store ...))) num))))
 
 (define (get-set!-expansion ref-stx [num 1])
   (unless (syntax-transforming?)

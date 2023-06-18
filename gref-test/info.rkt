@@ -10,7 +10,7 @@
 (define build-deps
   '("base"
     "doc-coverage" "expect" "rackunit-lib"
-    "gref-doc" "gref-lib" "srfi-lib"))
+    "gref-doc" "gref-lib"))
 (define pkg-authors '("whmunkchan@outlook.com"))
 (define pkg-desc "Tests for \"gref\"")
 (define license 'GPL-3.0-or-later)

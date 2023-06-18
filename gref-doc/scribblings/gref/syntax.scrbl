@@ -75,14 +75,6 @@ extensions.
   @tech[#:doc rkt-guide]{transformer binding} must implement
   @racket[gen:set!-expander].}
 
- @specsubform[(getter-expr arg ...)
-              #:grammar [(arg (code:line @#,racket[keyword] arg-expr)
-                              arg-expr)]
-              #:contracts ([getter-expr procedure?]
-                           [arg-expr any/c])]{
-  An SRFI 17--like @tech/rep{reference}.  The result of
-  @racket[getter-expr] must be associated with a @tech/rep{setter}.}
-
  The following @tech[#:doc stx-parse]{syntax-valued attributes} are
  bound:
 

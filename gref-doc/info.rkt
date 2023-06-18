@@ -10,7 +10,7 @@
 (define deps '("base"))
 (define build-deps
   '("scribble-lib"
-    "gref-lib" "srfi-lib"
+    "gref-lib"
     "algol60" "glass" "lens-doc" "racket-doc" "srfi-doc"))
 (define pkg-authors '("whmunkchan@outlook.com"))
 (define pkg-desc "Documentation part of \"gref\"")
