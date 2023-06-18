@@ -15,12 +15,14 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide defacc defattr defcls/alias defsubtogether)
+(provide defacc defattr defcls/alias defsubtogether
+         provided-for-syntax)
 
 (require scribble/manual
          scribblings/gref/lib
          syntax/parse/define
-         (for-label gref/base)
+         (for-label gref/base
+                    (only-in racket/base for-syntax))
          (for-syntax racket/base))
 
 (begin-for-syntax
@@ -75,18 +77,28 @@
        proto #,(tech #:doc stx-parse "syntax class")
        pre ...))])
 
+(begin-for-syntax
+  (define-splicing-syntax-class both
+    #:attributes (pre)
+    (pattern (~seq #:both pre:expr))))
+
 (define-syntax-parser defcls/alias
   #:literals ([= _])
-  [(_:id name:id alias:id (= . subform) pre:expr ...)
+  [(_:id name:id alias:id (= . subform)
+         (~optional both:both) pre:expr ...)
    #:with name-def
    (syntax/loc this-syntax
-     (defcls (name . subform) pre ...))
+     (defcls (name . subform) both.pre pre ...))
    #:with alias-def
    (syntax/loc this-syntax
-     (defcls (alias . subform) "An alias for " (racket name) "."))
+     (defcls (alias . subform) both.pre
+       "An alias for " (racket name) "."))
    #'(begin name-def alias-def)])
 
 (define-syntax-parser defsubtogether
   [(_:id [def:expr ...+] pre:expr ...)
    (syntax/loc this-syntax
      (nested #:style "leftindent" (deftogether [def ...] pre ...)))])
+
+(define provided-for-syntax
+  (list (smaller "Provided " (racket for-syntax) ".") "\n" "\n"))

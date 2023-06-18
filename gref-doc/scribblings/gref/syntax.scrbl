@@ -32,9 +32,7 @@
 @defmodule[gref/syntax #:no-declare]
 @declare-exporting[gref/syntax gref]
 The syntax module @racket[provide]s various bindings useful for user
-extensions.  In particular, @racket[gen:set!-expander], @racket[gref],
-@racket[generalized-reference], and @racket[get-set!-expansion] are
-@racket[provide]d @racket[for-syntax].
+extensions.
 
 @defform[(define-accessor name expr-id set!-expr)
          #:grammar [(name @#,racket[id]) (expr-id @#,racket[id])]
@@ -52,7 +50,8 @@ extensions.  In particular, @racket[gen:set!-expander], @racket[gref],
  respectively the @tech{lexical context}, @tech{store variables},
  @tech{reader expression}, and @tech{writer expression}.}
 
-@defthing[gen:set!-expander any/c]{
+@defthing[gen:set!-expander any/c
+          provided-for-syntax]{
  A @tech[#:doc rkt-ref]{generic interface} that supplies a
  @deftech{@racket[set!] expander} method @racket[set!-expand] used by
  @racket[gref].  A @racket[set!-expand] method takes two arguments:
@@ -61,7 +60,8 @@ extensions.  In particular, @racket[gen:set!-expander], @racket[gref],
  @racket[:set!] form.}
 
 @defcls/alias[gref generalized-reference
-              (_ [number (or/c #f exact-nonnegative-integer?) 1])]{
+              (_ [number (or/c #f exact-nonnegative-integer?) 1])
+              #:both provided-for-syntax]{
  Matches a @racket[number]-@tech/rep{valued} @tech/rep{reference}.  If
  @racket[number] is @racket[#f], matches any @tech/rep{reference}.  A
  @tech/rep{reference} is one of the following:
@@ -101,7 +101,8 @@ extensions.  In particular, @racket[gen:set!-expander], @racket[gref],
           [ref-stx syntax?]
           [number (or/c #f exact-nonnegative-integer?)])
          (values (listof syntax?) (listof identifier?)
-                 syntax? syntax?)]{
+                 syntax? syntax?)
+         provided-for-syntax]{
  The procedural interface for @racket[gref].  Expands @racket[ref-stx]
  as a @racket[(gref number)] form and returns the bound
  @tech[#:doc stx-parse]{syntax-valued attributes} in the documented
