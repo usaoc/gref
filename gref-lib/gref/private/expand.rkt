@@ -48,9 +48,6 @@
                                num)]))
   (hash-ref! gref-desc-table num make-desc))
 
-(define (apply-expr-trans trans . args)
-  (apply syntax-local-apply-transformer trans #f 'expression #f args))
-
 (define-syntax-class :set!-form
   #:description ":set! form"
   #:commit
@@ -72,25 +69,24 @@ not within the dynamic extent of a macro transformation")
   (pattern id:id
     #:cut
     #:when (or (not num) (= num 1))
-    #:with ::set!-form
-    (apply-expr-trans
-     (lambda ()
-       (syntax/loc this-syntax (:set! () (obj) id (set! id obj))))))
+    #:with (binding ...) '()
+    #:with obj ((make-syntax-introducer) #'obj 'add)
+    #:with (store ...) (datum (obj))
+    #:with reader #'id
+    #:with writer #'(set! id obj))
   (pattern (%values ~! ref:gref ...)
     #:cut
     #:when (or (not num) (= (length (datum (ref ...))) num))
-    #:with ::set!-form
-    (apply-expr-trans
-     (lambda ()
-       (syntax/loc this-syntax
-         (:set! (ref.binding ... ...) (ref.store ... ...)
-                (values ref.reader ...)
-                (#%expression (begin ref.writer ... (void))))))))
+    #:with (binding ...) (datum (ref.binding ... ...))
+    #:with (store ...) (datum (ref.store ... ...))
+    #:with reader #'(values ref.reader ...)
+    #:with writer #'(#%expression (begin ref.writer ... (void))))
   (pattern (acc . _)
     #:declare acc (static set!-expander? #f)
     #:cut
-    #:with ::set!-form
-    (apply-expr-trans set!-expand (datum acc.value) this-syntax)
+    #:with ::set!-form (syntax-local-apply-transformer
+                        set!-expand #'acc 'expression #f
+                        (datum acc.value) this-syntax)
     #:when (or (not num) (= (length (datum (store ...))) num))))
 
 (define (get-set!-expansion ref-stx [num 1])
