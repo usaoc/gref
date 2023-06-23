@@ -17,32 +17,20 @@
 
 (require (for-syntax racket/base
                      racket/provide-transform
-                     racket/syntax
                      syntax/datum
-                     syntax/parse
-                     syntax/transformer))
-(begin-for-syntax
-  (define-syntax-class (expr-trans out)
-    #:commit
-    #:attributes (wrapped)
-    (pattern name:id
-      #:with wrapped (format-id #'here "wrapped-~a" this-syntax
-                                #:source this-syntax)
-      #:do [(syntax-local-lift-module-end-declaration
-             (syntax/loc out
-               (define-syntax wrapped
-                 (make-expression-transformer
-                  (syntax-local-value #'name)))))])))
-(define-for-syntax (expand-expr-trans stx modes)
+                     syntax/parse))
+(define-for-syntax modify-intro (make-syntax-introducer #t))
+(define-for-syntax (in-modify-space id) (modify-intro id 'add))
+(define-for-syntax (expand-modify-out stx modes)
   (syntax-parse stx
-    [(_:id name ...)
-     #:declare name (expr-trans this-syntax)
-     (pre-expand-export
-      (syntax/loc this-syntax (rename-out [name.wrapped name] ...))
+    [(_:id name:id ...)
+     #:with (out-name ...) (map in-modify-space (datum (name ...)))
+     (expand-export
+      (syntax/loc this-syntax (combine-out out-name ...))
       modes)]))
-(define-syntax expression-transformer-out
-  (make-provide-pre-transformer expand-expr-trans))
-(provide (expression-transformer-out
+(define-syntax modify-out
+  (make-provide-transformer expand-modify-out))
+(provide (modify-out
           set! set!-values pset! pset!-values shift! rotate!
           call! call2! inc! dec! push! mpush! pop! mpop!))
 
@@ -53,7 +41,26 @@
                      racket/base
                      racket/syntax
                      syntax/datum
-                     syntax/parse))
+                     syntax/parse
+                     syntax/transformer))
+
+(define-syntax-parser define-modify-syntax
+  [(_:id name:id proc:expr)
+   #:with proc-name (syntax-local-introduce #'name)
+   #:with proc-def (syntax/loc this-syntax
+                     (define-for-syntax proc-name proc))
+   #:with def (syntax/loc this-syntax
+                (define-syntax name proc-name))
+   #:with out-name (in-modify-space #'name)
+   #:with out-def (syntax/loc this-syntax
+                    (define-syntax out-name
+                      (make-expression-transformer proc-name)))
+   #'(begin proc-def def out-def)])
+
+(define-syntax-parser define-modify-parser
+  [(_:id name:id . tail)
+   (syntax/loc this-syntax
+     (define-modify-syntax name (syntax-parser . tail)))])
 
 (begin-for-syntax
   (define-splicing-syntax-class set!-pair
@@ -61,7 +68,7 @@
     #:attributes (val [binding 1] [store 1] writer)
     (pattern (~seq (~var || (gref #f)) val:expr))))
 
-(define-syntax-parser set!
+(define-modify-parser set!
   #:track-literals
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
@@ -82,7 +89,7 @@
       #:with (writer ...) #'(void))
     (pattern (~seq (:gref ...) val:expr))))
 
-(define-syntax-parser set!-values
+(define-modify-parser set!-values
   #:track-literals
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
@@ -106,7 +113,7 @@
                            (writers ...) (val ...)))])
          (#%expression writer0) ...)))])
 
-(define-syntax-parser pset!
+(define-modify-parser pset!
   #:track-literals
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
@@ -115,7 +122,7 @@
                    ((pair.writer) ...) (pair.val ...))
        (void)))])
 
-(define-syntax-parser pset!-values
+(define-modify-parser pset!-values
   #:track-literals
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
@@ -156,7 +163,7 @@
       #:with (writer ...) (datum (ref0.writer ref.writer ...))
       #:with reader0 (datum ref0.reader))))
 
-(define-syntax-parser shift!
+(define-modify-parser shift!
   #:track-literals
   [(_:id ref:grefs val:expr)
    (syntax/loc this-syntax
@@ -164,7 +171,7 @@
                   (ref.reader ... val) (ref.writer ...)
                   ref.reader0))])
 
-(define-syntax-parser rotate!
+(define-modify-parser rotate!
   #:track-literals
   [(_:id ref:grefs)
    (syntax/loc this-syntax
@@ -198,7 +205,7 @@
    #:with ?? #'(... ~?)
    #:with (~var :::) #'(... ...)
    (syntax/loc this-syntax
-     (define-syntax-parser name
+     (define-modify-parser name
        #:track-literals
        [(_:id proc-expr:expr arg0-expr ... ref:gref arg . rest:rest)
         (~@ #:declare arg0-expr expr) ...
@@ -229,9 +236,9 @@
      #:with inc inc
      (syntax/loc this-syntax (call! inc ref (~? val.c 1)))]))
 
-(define-syntax inc! (make-inc! #'+))
+(define-modify-syntax inc! (make-inc! #'+))
 
-(define-syntax dec! (make-inc! #'-))
+(define-modify-syntax dec! (make-inc! #'-))
 
 (define-for-syntax (make-push! cons)
   (syntax-parser
@@ -240,9 +247,9 @@
      #:with cons cons
      (syntax/loc this-syntax (call2! cons val ref))]))
 
-(define-syntax push! (make-push! #'cons))
+(define-modify-syntax push! (make-push! #'cons))
 
-(define-syntax mpush! (make-push! #'mcons))
+(define-modify-syntax mpush! (make-push! #'mcons))
 
 (define-for-syntax (make-pop! pair? car cdr)
   (syntax-parser
@@ -261,6 +268,8 @@
              (let-values ([(ref.store ...) (cdr pair)])
                (#%expression ref.writer))))))]))
 
-(define-syntax pop! (make-pop! #'pair? #'unsafe-car #'unsafe-cdr))
+(define-modify-syntax pop!
+  (make-pop! #'pair? #'unsafe-car #'unsafe-cdr))
 
-(define-syntax mpop! (make-pop! #'mpair? #'unsafe-mcar #'unsafe-mcdr))
+(define-modify-syntax mpop!
+  (make-pop! #'mpair? #'unsafe-mcar #'unsafe-mcdr))
