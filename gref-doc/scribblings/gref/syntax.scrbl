@@ -21,7 +21,7 @@
           scribblings/gref/lib
           scribblings/gref/tech
           (for-label gref/syntax
-                     racket/contract/base
+                     racket/contract
                      syntax/parse
                      syntax/transformer
                      (prefix-in base- racket/base)
@@ -50,14 +50,23 @@ extensions.
  respectively the @tech{lexical context}, @tech{store variables},
  @tech{reader expression}, and @tech{writer expression}.}
 
-@defthing[gen:set!-expander any/c
+@defthing[prop:set!-expander
+          (struct-type-property/c
+           (-> set!-expander? (-> syntax? syntax?)))
           provided-for-syntax]{
- A @tech[#:doc rkt-ref]{generic interface} that supplies a
- @deftech{@racket[set!] expander} method @racket[set!-expand] used by
- @racket[gref].  A @racket[set!-expand] method takes two arguments:
- the structure instance that implements the method and the syntax
- object of the @tech/rep{reference}, and results in a valid
- @racket[:set!] form.}
+ A @tech[#:doc rkt-ref]{structure type property} to identify
+ @tech[#:doc rkt-ref]{structure types} that act as
+ @deftech{@racket[set!] expanders} used by @racket[gref].  The
+ property value takes the structure instance that implements
+ @racket[prop:set!-expander] and results in a
+ @tech{@racket[set!] expander}, which in turn takes the
+ @tech[#:doc rkt-ref]{syntax object} of the @tech/rep{reference} and
+ results in a valid @racket[:set!] form.}
+
+@defproc[(set!-expander? [val any/c]) boolean?
+         provided-for-syntax]{
+ Returns @racket[#t] if @racket[val] implements
+ @racket[prop:set!-expander], @racket[#f] otherwise.}
 
 @defcls/alias[gref generalized-reference
               (_ [number (or/c #f exact-nonnegative-integer?) 1])
@@ -73,7 +82,7 @@ extensions.
   An arbitrary @tech/rep{reference} whose exact form is specified by
   the @tech{@racket[set!] expander} of @racket[acc].  Its
   @tech[#:doc rkt-guide]{transformer binding} must implement
-  @racket[gen:set!-expander].}
+  @racket[prop:set!-expander].}
 
  The following @tech[#:doc stx-parse]{syntax-valued attributes} are
  bound:

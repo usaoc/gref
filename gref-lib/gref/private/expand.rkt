@@ -26,7 +26,7 @@
                         syntax? syntax?))]))
 
 (require gref/private/class
-         gref/private/generic
+         gref/private/property
          racket/match
          syntax/datum
          syntax/parse
@@ -84,9 +84,10 @@ not within the dynamic extent of a macro transformation")
   (pattern (acc . _)
     #:declare acc (static set!-expander? #f)
     #:cut
+    #:do [(define val (datum acc.value))
+          (define proc ((set!-expander-ref val) val))]
     #:with ::set!-form (syntax-local-apply-transformer
-                        set!-expand #'acc 'expression #f
-                        (datum acc.value) this-syntax)
+                        proc #'acc 'expression #f this-syntax)
     #:when (or (not num) (= (length (datum (store ...))) num))))
 
 (define (get-set!-expansion ref-stx [num 1])

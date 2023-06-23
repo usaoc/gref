@@ -18,9 +18,9 @@
 (require gref/private/define
          (only-in gref/private/literal :set!)
          (for-syntax gref/private/expand
-                     (only-in gref/private/generic
-                              gen:set!-expander)))
+                     (only-in gref/private/property
+                              prop:set!-expander set!-expander?)))
 (provide (all-from-out gref/private/define)
          (all-from-out gref/private/literal)
          (for-syntax (all-from-out gref/private/expand)
-                     (all-from-out gref/private/generic)))
+                     (all-from-out gref/private/property)))

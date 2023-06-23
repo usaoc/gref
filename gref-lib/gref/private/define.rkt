@@ -18,7 +18,7 @@
 (provide define-accessor)
 
 (require syntax/parse/define
-         (for-syntax gref/private/generic
+         (for-syntax gref/private/property
                      racket/base
                      racket/contract/base
                      syntax/parse
@@ -30,8 +30,7 @@
   (struct accessor (expr set!)
     #:property prop:procedure (struct-field-index expr)
     #:property prop:set!-transformer (struct-field-index expr)
-    #:methods gen:set!-expander
-    [(define (set!-expand acc ref) ((accessor-set! acc) ref))]))
+    #:property prop:set!-expander (lambda (acc) (accessor-set! acc))))
 
 (define-syntax-parser define-accessor
   [(_:id name:id expr:id set!)

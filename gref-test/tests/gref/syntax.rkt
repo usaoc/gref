@@ -54,28 +54,26 @@
                     'unreached)
                 expect-expand-contract-exn))
 
-(test-case "gen:set!-expander"
+(test-case "prop:set!-expander"
   (check-expect (let ([val 'init])
                   (set! (bar) 'ignored)
                   (define-syntax bar
                     (let ()
+                      (define (expand _foo)
+                        (syntax-parser
+                          [(_:id)
+                           (syntax/loc this-syntax
+                             (:set! () (_obj) val (set! val 'set)))]))
                       (struct foo ()
-                        #:methods gen:set!-expander
-                        [(define (set!-expand _foo stx)
-                           (syntax-parse stx
-                             [(_:id)
-                              (syntax/loc this-syntax
-                                (:set! () (_obj)
-                                       val (set! val 'set)))]))])
+                        #:property prop:set!-expander expand)
                       (foo)))
                   val)
                 'set)
   (check-expect #'(let-syntax
                       ([bar (let ()
+                              (define ((expand _foo) _stx) 'not-stx)
                               (struct foo ()
-                                #:methods gen:set!-expander
-                                [(define (set!-expand _foo _stx)
-                                   'not-stx)])
+                                #:property prop:set!-expander expand)
                               (foo))])
                     (set! (bar) 'ignored))
                 expect-expand-contract-exn))
