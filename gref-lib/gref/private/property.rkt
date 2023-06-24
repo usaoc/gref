@@ -15,13 +15,7 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(require racket/contract)
-(provide set!-expander? set!-expander-ref
-         (contract-out
-          [prop:set!-expander
-           (struct-type-property/c
-            (-> set!-expander? (-> syntax? syntax?)))]))
+(provide prop:set!-expander set!-expander? set!-expander-ref)
 
 (define-values (prop:set!-expander set!-expander? set!-expander-ref)
   (make-struct-type-property 'set!-expander))
-

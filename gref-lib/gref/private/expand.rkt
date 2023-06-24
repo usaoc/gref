@@ -15,19 +15,10 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(require racket/contract/base)
-(provide gref
-         (rename-out [gref generalized-reference])
-         (contract-out
-          [get-set!-expansion
-           (->* (syntax?)
-                ((or/c #f exact-nonnegative-integer?))
-                (values (listof syntax?) (listof identifier?)
-                        syntax? syntax?))]))
+(provide get-set!-expansion gref)
 
 (require gref/private/class
          gref/private/property
-         racket/match
          syntax/datum
          syntax/parse
          (for-syntax racket/base)
@@ -39,13 +30,9 @@
 (define (make-gref-desc num)
   (define (make-desc)
     (define base "generalized reference")
-    (match num
-      [#f (string-append-immutable "any " base)]
-      [(? exact-nonnegative-integer? (app number->string num-str))
-       (string-append-immutable num-str "-valued " base)]
-      [_ (raise-argument-error 'gref
-                               "(or/c #f exact-nonnegative-integer?)"
-                               num)]))
+    (if num
+        (string-append-immutable (number->string num) "-valued " base)
+        (string-append-immutable "any " base)))
   (hash-ref! gref-desc-table num make-desc))
 
 (define-syntax-class :set!-form
@@ -91,9 +78,6 @@ not within the dynamic extent of a macro transformation")
     #:when (or (not num) (= (length (datum (store ...))) num))))
 
 (define (get-set!-expansion ref-stx [num 1])
-  (unless (syntax-transforming?)
-    (raise-arguments-error 'get-set!-expansion
-                           "not currently expanding"))
   (syntax-parse ref-stx
     [ref
      #:declare ref (gref num)
