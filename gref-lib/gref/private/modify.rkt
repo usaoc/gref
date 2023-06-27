@@ -66,7 +66,7 @@
   (define-splicing-syntax-class set!-pair
     #:description "set! assignment pair"
     #:attributes (val [binding 1] [store 1] writer)
-    (pattern (~seq (~var || (gref #f)) val:expr))))
+    (pattern (~seq (~var || (%gref #f)) val:expr))))
 
 (define-modify-parser set!
   #:track-literals
@@ -82,28 +82,24 @@
 (begin-for-syntax
   (define-splicing-syntax-class set!-values-pair
     #:description "set!-values assignment pair"
-    #:attributes (val [binding 2] [store 2] [writer 1])
-    (pattern (~seq () val:expr)
-      #:with ((binding ...) ...) '()
-      #:with ((store ...) ...) '()
-      #:with (writer ...) #'(void))
-    (pattern (~seq (:gref ...) val:expr))))
+    #:attributes (val [binding 1] [store 1] writer)
+    (pattern (~seq (:%gref1s) val:expr))))
 
 (define-modify-parser set!-values
   #:track-literals
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
      (let ()
-       (let-values (pair.binding ... ...)
-         (let-values ([(pair.store ... ...) pair.val])
-           (#%expression pair.writer) ...))
+       (let-values (pair.binding ...)
+         (let-values ([(pair.store ...) pair.val])
+           (#%expression pair.writer)))
        ...
        (void)))])
 
 (define-syntax-parser pset!-fold
   [(_ () () () ()) (syntax/loc this-syntax (void))]
   [(_ ((binding0 ...) bindings ...) ((store0 ...) stores ...)
-      ((writer0 ...) writers ...) (val0 val ...))
+      (writer0 writers ...) (val0 val ...))
    (syntax/loc this-syntax
      (let-values (binding0 ...)
        (let-values
@@ -111,7 +107,7 @@
              (begin0 val0
                (pset!-fold (bindings ...) (stores ...)
                            (writers ...) (val ...)))])
-         (#%expression writer0) ...)))])
+         (#%expression writer0))))])
 
 (define-modify-parser pset!
   #:track-literals
@@ -119,7 +115,7 @@
    (syntax/loc this-syntax
      (let ()
        (pset!-fold ((pair.binding ...) ...) ((pair.store ...) ...)
-                   ((pair.writer) ...) (pair.val ...))
+                   (pair.writer ...) (pair.val ...))
        (void)))])
 
 (define-modify-parser pset!-values
@@ -127,10 +123,8 @@
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
      (let ()
-       (pset!-fold ((pair.binding ... ...) ...)
-                   ((pair.store ... ...) ...)
-                   ((pair.writer ...) ...)
-                   (pair.val ...))
+       (pset!-fold ((pair.binding ...) ...) ((pair.store ...) ...)
+                   (pair.writer ...) (pair.val ...))
        (void)))])
 
 (define-syntax-parser shift!-fold
@@ -146,26 +140,9 @@
                           (reader ...) (writer ...) reader1)])
          (begin0 (~? reader0 (void)) writer0))))])
 
-(begin-for-syntax
-  (define-splicing-syntax-class grefs
-    #:description "generalized references"
-    #:attributes ([binding 2] [store 2] [reader 1] [writer 1] reader0)
-    (pattern (~seq (~var ref0 (gref #f))
-                   (~do (define number
-                          (length (datum (ref0.store ...)))))
-                   (~var ref (gref number))
-                   ...)
-      #:with ((binding ...) ...)
-      (datum ((ref0.binding ...) (ref.binding ...) ...))
-      #:with ((store ...) ...)
-      (datum ((ref0.store ...) (ref.store ...) ...))
-      #:with (reader ...) (datum (ref.reader ...))
-      #:with (writer ...) (datum (ref0.writer ref.writer ...))
-      #:with reader0 (datum ref0.reader))))
-
 (define-modify-parser shift!
   #:track-literals
-  [(_:id ref:grefs val:expr)
+  [(_:id ref:%grefns val:expr)
    (syntax/loc this-syntax
      (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
                   (ref.reader ... val) (ref.writer ...)
@@ -173,7 +150,7 @@
 
 (define-modify-parser rotate!
   #:track-literals
-  [(_:id ref:grefs)
+  [(_:id ref:%grefns)
    (syntax/loc this-syntax
      (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
                   (ref.reader ... ref.reader0) (ref.writer ...)))])
@@ -207,7 +184,7 @@
    (syntax/loc this-syntax
      (define-modify-parser name
        #:track-literals
-       [(_:id proc-expr:expr arg0-expr ... ref:gref arg . rest:rest)
+       [(_:id proc-expr:expr arg0-expr ... ref:%gref arg . rest:rest)
         (~@ #:declare arg0-expr expr) ...
         #:declare arg (args more-idx)
         (syntax/loc this-syntax
@@ -231,7 +208,7 @@
 (define-for-syntax (make-inc! inc)
   (syntax-parser
     #:track-literals
-    [(_:id ref:gref (~optional val))
+    [(_:id ref:%gref (~optional val))
      #:declare val (expr/c #'number?)
      #:with inc inc
      (syntax/loc this-syntax (call! inc ref (~? val.c 1)))]))
@@ -243,7 +220,7 @@
 (define-for-syntax (make-push! cons)
   (syntax-parser
     #:track-literals
-    [(_:id val:expr ref:gref)
+    [(_:id val:expr ref:%gref)
      #:with cons cons
      (syntax/loc this-syntax (call2! cons val ref))]))
 
@@ -254,7 +231,7 @@
 (define-for-syntax (make-pop! pair? car cdr)
   (syntax-parser
     #:track-literals
-    [(_:id ref:gref)
+    [(_:id ref:%gref)
      #:with reader (datum->syntax #'ref.reader
                                   (syntax-e #'ref.reader)
                                   #'ref)
