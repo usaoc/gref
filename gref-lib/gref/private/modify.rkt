@@ -70,9 +70,10 @@
 
 (define-modify-parser set!
   #:track-literals
+  [(_:id) (syntax/loc this-syntax (void))]
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
-     (let ()
+     (begin
        (let-values (pair.binding ...)
          (let-values ([(pair.store ...) pair.val])
            (#%expression pair.writer)))
@@ -87,14 +88,14 @@
 
 (define-modify-parser set!-values
   #:track-literals
+  [(_:id) (syntax/loc this-syntax (void))]
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
-     (let ()
+     (begin
        (let-values (pair.binding ...)
          (let-values ([(pair.store ...) pair.val])
-           (#%expression pair.writer)))
-       ...
-       (void)))])
+           pair.writer))
+       ...))])
 
 (define-syntax-parser pset!-fold
   [(_ () () () ()) (syntax/loc this-syntax (void))]
@@ -107,25 +108,23 @@
              (begin0 val0
                (pset!-fold (bindings ...) (stores ...)
                            (writers ...) (val ...)))])
-         (#%expression writer0))))])
+         writer0)))])
 
 (define-modify-parser pset!
   #:track-literals
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
-     (let ()
+     (begin
        (pset!-fold ((pair.binding ...) ...) ((pair.store ...) ...)
-                   (pair.writer ...) (pair.val ...))
+                   ((#%expression pair.writer) ...) (pair.val ...))
        (void)))])
 
 (define-modify-parser pset!-values
   #:track-literals
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
-     (let ()
-       (pset!-fold ((pair.binding ...) ...) ((pair.store ...) ...)
-                   (pair.writer ...) (pair.val ...))
-       (void)))])
+     (pset!-fold ((pair.binding ...) ...) ((pair.store ...) ...)
+                 (pair.writer ...) (pair.val ...)))])
 
 (define-syntax-parser shift!-fold
   [(_ () () () () reader) (syntax/loc this-syntax reader)]
@@ -188,7 +187,7 @@
         (~@ #:declare arg0-expr expr) ...
         #:declare arg (args more-idx)
         (syntax/loc this-syntax
-          (let ()
+          (begin
             (let-values ([(proc) proc-expr]
                          [(arg0) arg0-expr] ...
                          ref.binding :::
