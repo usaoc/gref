@@ -15,57 +15,10 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide args binding maybe-expr/c)
+(provide maybe-expr/c)
 
-(require racket/keyword
-         racket/match
-         racket/syntax
-         syntax/datum
-         syntax/parse
+(require syntax/parse
          (for-template racket/base))
-
-(define-syntax-class (args [idx #f])
-  #:description "#%app arguments"
-  #:commit
-  #:attributes ([kw 1] [expr 1] [val 1])
-  (pattern ((~or* (~describe "keyword argument"
-                    (~seq kw:keyword ~!
-                          (~bind [kw-datum (syntax-e #'kw)])
-                          expr:expr))
-                  expr)
-            ...)
-    #:fail-when
-    (let ()
-      (define table (make-hasheq))
-      (for/first ([kw (in-list (datum (kw ...)))]
-                  [kw-datum (in-list (datum (kw-datum ...)))]
-                  #:when kw
-                  #:unless (and (not (hash-has-key? table kw-datum))
-                                (hash-set! table kw-datum #t)))
-        kw))
-    "duplicate keyword"
-    #:attr [val 1]
-    (and idx
-         (for/fold ([vals '()]
-                    [idx idx]
-                    #:result (reverse vals))
-                   ([expr (in-list (datum (expr ...)))]
-                    [kw (in-list (datum (kw-datum ...)))])
-           (define (next val idx) (values (cons val vals) idx))
-           (match kw
-             [#f (next (format-id #'here "arg~a" idx #:source expr)
-                       (add1 idx))]
-             [_ (next (datum->syntax #'here
-                                     (string->symbol
-                                      (keyword->immutable-string kw))
-                                     expr)
-                      idx)])))))
-
-(define-syntax-class binding
-  #:description "let-values binding pair"
-  #:commit
-  #:attributes ()
-  (pattern [(_:id ...) _:expr]))
 
 (define-syntax-class (maybe-expr/c contract-expr)
   #:commit

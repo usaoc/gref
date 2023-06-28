@@ -39,6 +39,7 @@
          (for-syntax gref/private/class
                      gref/private/expand
                      racket/base
+                     racket/keyword
                      racket/syntax
                      syntax/datum
                      syntax/parse
@@ -151,7 +152,44 @@
      (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
                   (ref.reader ... ref.reader0) (ref.writer ...)))])
 
+(define-for-syntax (find-duplicate kws)
+  (define table (make-hasheq))
+  (for/first ([kw (in-list kws)]
+              #:when kw
+              #:do [(define kw-datum (syntax-e kw))]
+              #:unless (and (not (hash-ref table kw-datum #f))
+                            (hash-set! table kw-datum #t)))
+    kw))
+
+(define-for-syntax (generate-vals exprs kws idx)
+  (for/fold ([vals '()]
+             [idx idx]
+             #:result (reverse vals))
+            ([expr (in-list exprs)]
+             [kw (in-list kws)])
+    (define (next val idx) (values (cons val vals) idx))
+    (cond
+      [kw
+       (define sym
+         (string->symbol (keyword->immutable-string (syntax-e kw))))
+       (next (datum->syntax #'here sym expr) idx)]
+      [else
+       (define id (format-id #'here "arg~a" idx #:source expr))
+       (next id (add1 idx))])))
+
 (begin-for-syntax
+  (define-syntax-class (args idx)
+    #:description "#%app arguments"
+    #:commit
+    #:attributes ([kw 1] [expr 1] [val 1])
+    (pattern ((~or* (~describe "keyword argument"
+                      (~seq kw:keyword ~! expr:expr))
+                    expr)
+              ...)
+      #:fail-when (find-duplicate (datum (kw ...)))
+      "duplicate keyword"
+      #:with (val ...)
+      (generate-vals (datum (expr ...)) (datum (kw ...)) idx)))
   (define-syntax-class rest
     #:description "rest argument"
     #:commit

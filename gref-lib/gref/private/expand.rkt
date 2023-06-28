@@ -18,8 +18,7 @@
 (provide get-set!-expansion gref
          %gref %gref1s %grefns)
 
-(require gref/private/class
-         gref/private/property
+(require gref/private/property
          syntax/datum
          syntax/parse
          (for-syntax racket/base)
@@ -67,6 +66,12 @@
     #:do [(define val (syntax-local-value this-syntax get-unbound))]
     #:when (not (unbound? val))
     #:attr val val))
+
+(define-syntax-class binding
+  #:description "let-values binding pair"
+  #:commit
+  #:attributes ()
+  (pattern [(_:id ...) _:expr]))
 
 (define-syntax-class (:set!-form track)
   #:description ":set! form"
