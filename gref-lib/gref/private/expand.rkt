@@ -36,13 +36,43 @@
         (string-append-immutable "any " base)))
   (hash-ref! gref-desc-table num make-desc))
 
+(define (check-num num given) (or (not num) (= given num)))
+
+(define (make-mismatch desc given)
+  (string-append-immutable
+   "number of values mismatch
+  expected: " desc "\n  given: " (make-gref-desc given)))
+
+(define (make-illegal val)
+  (string-append-immutable
+   "not bound to a set!-expander? value
+  value at phase " (number->string (add1 (syntax-local-phase-level)))
+   ": " ((error-value->string-handler) val (error-print-width))))
+
+(define unbound #s(unbound))
+
+(define (get-unbound) unbound)
+
+(define (unbound? val) (eq? val unbound))
+
+(define-syntax-class id-trans
+  #:description "identifier with transformer binding"
+  #:commit
+  #:attributes (val)
+  (pattern _:id
+    #:do [(define val (syntax-local-value this-syntax get-unbound))]
+    #:when (not (unbound? val))
+    #:attr val val))
+
 (define-syntax-class :set!-form
   #:description ":set! form"
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
   #:literals (:set!)
-  (pattern (:set! (binding:binding ...) (store:id ...)
-                  reader:expr writer:expr)))
+  (pattern (:set! (~describe "lexical context" (binding:binding ...))
+                  (~describe "store variables" (store:id ...))
+                  (~describe "reader expression" reader:expr)
+                  (~describe "writer expression" writer:expr))))
 
 (define-syntax-class (%gref [num 1] [desc (make-gref-desc num)]
                             #:show [show desc])
@@ -51,20 +81,22 @@
   #:attributes ([binding 1] [store 1] reader writer)
   (pattern id:id
     #:cut
-    #:when (or (not num) (= num 1))
+    #:fail-unless (check-num num 1) (make-mismatch desc 1)
     #:with (binding ...) '()
     #:with obj ((make-syntax-introducer) #'obj 'add)
     #:with (store ...) (datum (obj))
     #:with reader #'id
     #:with writer #'(set! id obj))
-  (pattern (acc . _)
-    #:declare acc (static set!-expander? #f)
+  (pattern (acc:id-trans . _)
     #:cut
-    #:do [(define val (datum acc.value))
-          (define proc ((set!-expander-ref val) val))]
+    #:do [(define val (datum acc.val))
+          (define make-proc (set!-expander-ref val get-unbound))]
+    #:fail-when (and (unbound? make-proc) #'acc) (make-illegal val)
+    #:do [(define proc (make-proc val))]
     #:with ::set!-form (syntax-local-apply-transformer
                         proc #'acc 'expression #f this-syntax)
-    #:when (or (not num) (= (length (datum (store ...))) num))))
+    #:do [(define given (length (datum (store ...))))]
+    #:fail-unless (check-num num given) (make-mismatch desc given)))
 
 (define-splicing-syntax-class %gref1s
   #:description "1-valued generalized references"
