@@ -49,6 +49,10 @@
   value at phase " (number->string (add1 (syntax-local-phase-level)))
    ": " ((error-value->string-handler) val (error-print-width))))
 
+(define ((make-track orig-stx id-stx) new-stx)
+  (syntax-track-origin new-stx orig-stx
+                       (syntax-local-introduce id-stx)))
+
 (define unbound #s(unbound))
 
 (define (get-unbound) unbound)
@@ -64,15 +68,19 @@
     #:when (not (unbound? val))
     #:attr val val))
 
-(define-syntax-class :set!-form
+(define-syntax-class (:set!-form track)
   #:description ":set! form"
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
   #:literals (:set!)
-  (pattern (:set! (~describe "lexical context" (binding:binding ...))
-                  (~describe "store variables" (store:id ...))
-                  (~describe "reader expression" reader:expr)
-                  (~describe "writer expression" writer:expr))))
+  (pattern (:set! (~describe "lexical context" (%binding:binding ...))
+                  (~describe "store variables" (%store:id ...))
+                  (~describe "reader expression" %reader:expr)
+                  (~describe "writer expression" %writer:expr))
+    #:with (binding ...) (map track (datum (%binding ...)))
+    #:with (store ...) (map track (datum (%store ...)))
+    #:with reader (track #'%reader)
+    #:with writer (track #'%writer)))
 
 (define-syntax-class (%gref [num 1] [desc (make-gref-desc num)]
                             #:show [show desc])
@@ -83,18 +91,22 @@
     #:cut
     #:fail-unless (check-num num 1) (make-mismatch desc 1)
     #:with (binding ...) '()
+    #:do [(define track (make-track this-syntax #'id))]
     #:with obj ((make-syntax-introducer) #'obj 'add)
-    #:with (store ...) (datum (obj))
-    #:with reader #'id
-    #:with writer #'(set! id obj))
+    #:with (store ...) (list (track #'obj))
+    #:with reader (track #'id)
+    #:with writer (track #'(set! id obj)))
   (pattern (acc:id-trans . _)
     #:cut
     #:do [(define val (datum acc.val))
           (define make-proc (set!-expander-ref val get-unbound))]
     #:fail-when (and (unbound? make-proc) #'acc) (make-illegal val)
-    #:do [(define proc (make-proc val))]
-    #:with ::set!-form (syntax-local-apply-transformer
-                        proc #'acc 'expression #f this-syntax)
+    #:do [(define proc (make-proc val))
+          (define track (make-track this-syntax #'acc))
+          (define expanded
+            (syntax-local-apply-transformer
+             proc #'acc 'expression #f this-syntax))]
+    #:with (~var || (:set!-form track)) expanded
     #:do [(define given (length (datum (store ...))))]
     #:fail-unless (check-num num given) (make-mismatch desc given)))
 

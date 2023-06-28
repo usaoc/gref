@@ -69,7 +69,6 @@
     (pattern (~seq (~var || (%gref #f)) val:expr))))
 
 (define-modify-parser set!
-  #:track-literals
   [(_:id) (syntax/loc this-syntax (void))]
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
@@ -87,7 +86,6 @@
     (pattern (~seq :%gref1s val:expr))))
 
 (define-modify-parser set!-values
-  #:track-literals
   [(_:id) (syntax/loc this-syntax (void))]
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
@@ -111,7 +109,6 @@
          writer0)))])
 
 (define-modify-parser pset!
-  #:track-literals
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
      (begin
@@ -120,7 +117,6 @@
        (void)))])
 
 (define-modify-parser pset!-values
-  #:track-literals
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
      (pset!-fold ((pair.binding ...) ...) ((pair.store ...) ...)
@@ -140,7 +136,6 @@
          (begin0 (~? reader0 (void)) writer0))))])
 
 (define-modify-parser shift!
-  #:track-literals
   [(_:id maybe-ref ... maybe-val)
    #:cut
    #:with ref:%grefns (syntax/loc this-syntax (maybe-ref ...))
@@ -151,7 +146,6 @@
                   ref.reader0))])
 
 (define-modify-parser rotate!
-  #:track-literals
   [(_:id . ref:%grefns)
    (syntax/loc this-syntax
      (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
@@ -180,7 +174,6 @@
    #:with more-idx (datum->syntax #'here (add1 arity-num) #'arity)
    (syntax/loc this-syntax
      (define-modify-parser name
-       #:track-literals
        [(_:id proc-expr:expr arg0-expr ... ref:%gref
               maybe-arg (... ...) . maybe-rest)
         (~@ #:declare arg0-expr expr) ...
@@ -209,7 +202,6 @@
 
 (define-for-syntax (make-inc! inc)
   (syntax-parser
-    #:track-literals
     [(_:id ref:%gref (~optional val))
      #:declare val (expr/c #'number?)
      #:with inc inc
@@ -221,7 +213,6 @@
 
 (define-for-syntax (make-push! cons)
   (syntax-parser
-    #:track-literals
     [(_:id val:expr ref:%gref)
      #:with cons cons
      (syntax/loc this-syntax (call2! cons val ref))]))
@@ -232,7 +223,6 @@
 
 (define-for-syntax (make-pop! pair? car cdr)
   (syntax-parser
-    #:track-literals
     [(_:id ref:%gref)
      #:with reader (datum->syntax #'ref.reader
                                   (syntax-e #'ref.reader)
