@@ -178,30 +178,28 @@
    #:with (arg0 ...) (format-args "arg~a")
    #:with (arg0-expr ...) (format-args "arg~a-expr")
    #:with more-idx (datum->syntax #'here (add1 arity-num) #'arity)
-   #:with ?@ #'(... ~@)
-   #:with ?? #'(... ~?)
-   #:with (~var :::) #'(... ...)
    (syntax/loc this-syntax
      (define-modify-parser name
        #:track-literals
-       [(_:id proc-expr:expr arg0-expr ... ref:%gref maybe-arg :::
-              . maybe-rest)
+       [(_:id proc-expr:expr arg0-expr ... ref:%gref
+              maybe-arg (... ...) . maybe-rest)
         (~@ #:declare arg0-expr expr) ...
         #:cut
         #:with (~var arg (args more-idx))
-        (syntax/loc this-syntax (maybe-arg :::))
+        (syntax/loc this-syntax (maybe-arg (... ...)))
         #:with rest:rest #'maybe-rest
         (syntax/loc this-syntax
           (begin
             (let-values ([(proc) proc-expr]
                          [(arg0) arg0-expr] ...
-                         ref.binding :::
-                         [(arg.val) arg.expr] :::
-                         (?? [(rest.val) rest.expr]))
-              (let-values ([(ref.store :::)
+                         ref.binding (... ...)
+                         [(arg.val) arg.expr] (... ...)
+                         (... (~? [(rest.val) rest.expr])))
+              (let-values ([(ref.store (... ...))
                             (rest.app proc arg0 ... ref.reader
-                                      (?@ (?? arg.kw) arg.val) :::
-                                      (?? rest.val))])
+                                      (... (~@ (~? arg.kw) arg.val))
+                                      (... ...)
+                                      (... (~? rest.val)))])
                 (#%expression ref.writer)))
             (void)))]))])
 
