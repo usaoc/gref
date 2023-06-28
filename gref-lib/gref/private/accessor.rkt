@@ -30,6 +30,7 @@
          racket/unsafe/ops
          syntax/parse/define
          (for-syntax gref/private/class
+                     gref/private/expand
                      racket/base
                      racket/match
                      racket/symbol
@@ -46,6 +47,13 @@
      (syntax/loc this-syntax
        (:set! ([(pair) pair-expr.c]) (obj)
               (mcar pair) (set-mcar! pair obj)))]))
+
+(define-accessor %values values
+  (syntax-parser
+    [(_:id ref:%gref1s)
+     (syntax/loc this-syntax
+       (:set! (ref.binding ...) (ref.store ...)
+              ref.reader ref.writer))]))
 
 (define-accessor %mcar mcar
   (make-mcar #'unsafe-mcar #'unsafe-set-mcar!))

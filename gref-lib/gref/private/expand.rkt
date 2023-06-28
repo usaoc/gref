@@ -49,7 +49,6 @@
   #:description show
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
-  #:literals (%values)
   (pattern id:id
     #:cut
     #:when (or (not num) (= num 1))
@@ -58,7 +57,6 @@
     #:with (store ...) (datum (obj))
     #:with reader #'id
     #:with writer #'(set! id obj))
-  (pattern (%values ~! (~var || (%gref1s num))))
   (pattern (acc . _)
     #:declare acc (static set!-expander? #f)
     #:cut
@@ -68,13 +66,12 @@
                         proc #'acc 'expression #f this-syntax)
     #:when (or (not num) (= (length (datum (store ...))) num))))
 
-(define-splicing-syntax-class (%gref1s [num #f])
+(define-splicing-syntax-class %gref1s
   #:description "1-valued generalized references"
   #:attributes ([binding 1] [store 1] reader writer)
   (pattern (~seq (~do (define desc (make-gref-desc 1)))
                  (~var ref (%gref 1 desc)) ...)
     #:cut
-    #:when (or (not num) (= (length (datum (ref ...))) num))
     #:with (binding ...) (datum (ref.binding ... ...))
     #:with (store ...) (datum (ref.store ... ...))
     #:with reader #'(values ref.reader ...)
