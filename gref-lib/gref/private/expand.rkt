@@ -98,24 +98,26 @@
     #:do [(define given (length (datum (store ...))))]
     #:fail-unless (check-num num given) (make-mismatch desc given)))
 
-(define-splicing-syntax-class %gref1s
+(define-syntax-class %gref1s
   #:description "1-valued generalized references"
+  #:commit
   #:attributes ([binding 1] [store 1] reader writer)
-  (pattern (~seq (~do (define desc (make-gref-desc 1)))
-                 (~var ref (%gref 1 desc)) ...)
+  (pattern ((~do (define desc (make-gref-desc 1)))
+            (~var ref (%gref 1 desc)) ...)
     #:cut
     #:with (binding ...) (datum (ref.binding ... ...))
     #:with (store ...) (datum (ref.store ... ...))
     #:with reader #'(values ref.reader ...)
     #:with writer #'(#%expression (begin ref.writer ... (void)))))
 
-(define-splicing-syntax-class %grefns
+(define-syntax-class %grefns
   #:description "same-valued generalized references"
+  #:commit
   #:attributes ([binding 2] [store 2] [reader 1] [writer 1] reader0)
-  (pattern (~seq (~var ref0 (%gref #f))
-                 (~do (define num (length (datum (ref0.store ...))))
-                      (define desc (make-gref-desc num)))
-                 (~var ref (%gref num desc)) ...)
+  (pattern ((~var ref0 (%gref #f))
+            (~do (define num (length (datum (ref0.store ...))))
+                 (define desc (make-gref-desc num)))
+            (~var ref (%gref num desc)) ...)
     #:with ((binding ...) ...)
     (datum ((ref0.binding ...) (ref.binding ...) ...))
     #:with ((store ...) ...)

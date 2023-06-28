@@ -50,7 +50,7 @@
 
 (define-accessor %values values
   (syntax-parser
-    [(_:id ref:%gref1s)
+    [(_:id . ref:%gref1s)
      (syntax/loc this-syntax
        (:set! (ref.binding ...) (ref.store ...)
               ref.reader ref.writer))]))

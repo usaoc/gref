@@ -84,7 +84,7 @@
   (define-splicing-syntax-class set!-values-pair
     #:description "set!-values assignment pair"
     #:attributes (val [binding 1] [store 1] writer)
-    (pattern (~seq (:%gref1s) val:expr))))
+    (pattern (~seq :%gref1s val:expr))))
 
 (define-modify-parser set!-values
   #:track-literals
@@ -141,7 +141,10 @@
 
 (define-modify-parser shift!
   #:track-literals
-  [(_:id ref:%grefns val:expr)
+  [(_:id maybe-ref ... maybe-val)
+   #:cut
+   #:with ref:%grefns (syntax/loc this-syntax (maybe-ref ...))
+   #:with val:expr #'maybe-val
    (syntax/loc this-syntax
      (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
                   (ref.reader ... val) (ref.writer ...)
@@ -149,24 +152,22 @@
 
 (define-modify-parser rotate!
   #:track-literals
-  [(_:id ref:%grefns)
+  [(_:id . ref:%grefns)
    (syntax/loc this-syntax
      (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
                   (ref.reader ... ref.reader0) (ref.writer ...)))])
 
 (begin-for-syntax
-  (define-syntax-class np-expr
-    #:description "non-parenthesized expression"
-    #:commit
-    #:attributes ()
-    (pattern (~or* (_ ...) (_ ...+ . _)) #:cut #:post (~fail))
-    (pattern _:expr))
   (define-syntax-class rest
     #:description "rest argument"
     #:commit
     #:attributes (app expr val)
     (pattern () #:with app #'#%app #:attr val #f #:attr expr #f)
-    (pattern expr:np-expr #:with app #'apply #:with val #'rest-arg)))
+    (pattern _
+      #:cut
+      #:with expr:expr this-syntax
+      #:with app #'apply
+      #:with val #'rest-arg)))
 
 (define-syntax-parser define-call!
   [(_:id name:id arity:exact-nonnegative-integer)
@@ -183,9 +184,13 @@
    (syntax/loc this-syntax
      (define-modify-parser name
        #:track-literals
-       [(_:id proc-expr:expr arg0-expr ... ref:%gref arg . rest:rest)
+       [(_:id proc-expr:expr arg0-expr ... ref:%gref maybe-arg :::
+              . maybe-rest)
         (~@ #:declare arg0-expr expr) ...
-        #:declare arg (args more-idx)
+        #:cut
+        #:with (~var arg (args more-idx))
+        (syntax/loc this-syntax (maybe-arg :::))
+        #:with rest:rest #'maybe-rest
         (syntax/loc this-syntax
           (begin
             (let-values ([(proc) proc-expr]

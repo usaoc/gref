@@ -24,21 +24,16 @@
          syntax/parse
          (for-template racket/base))
 
-(define-splicing-syntax-class kw-arg
-  #:description "keyword argument"
-  #:attributes (kw kw-datum expr)
-  (pattern (~seq kw:keyword expr:expr)
-    #:attr kw-datum (syntax-e #'kw)))
-
-(define-splicing-syntax-class arg
-  #:description "non-keyword argument"
-  #:attributes (expr)
-  (pattern expr:expr))
-
-(define-splicing-syntax-class (args [idx #f])
+(define-syntax-class (args [idx #f])
   #:description "#%app arguments"
+  #:commit
   #:attributes ([kw 1] [expr 1] [val 1])
-  (pattern (~seq (~or* :kw-arg :arg) ...)
+  (pattern ((~or* (~describe "keyword argument"
+                    (~seq kw:keyword ~!
+                          (~bind [kw-datum (syntax-e #'kw)])
+                          expr:expr))
+                  expr)
+            ...)
     #:fail-when
     (let ()
       (define table (make-hasheq))
