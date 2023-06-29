@@ -41,7 +41,7 @@ validate the results.  When an inapproapriate result is detected, the
 
 indicates that @racket[form] is in a @deftech{@racket[set!] context},
 where the @tech{@racket[set!] expander} is invoked and produces a
-valid @racket[:set!] form.  A @tech{@racket[set!] context} is
+valid @racket[set!-pack]ed form.  A @tech{@racket[set!] context} is
 available in certain sub-form positions of @tech{accessors} and
 @tech{modify macros} where a @tech/rep{reference} is explicitly
 required.  All documented @tech{accessors} extend the base Racket

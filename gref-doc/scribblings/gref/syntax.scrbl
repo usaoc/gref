@@ -23,6 +23,7 @@
           (for-label gref/syntax
                      racket/contract
                      syntax/parse
+                     syntax/srcloc
                      syntax/transformer
                      (prefix-in base- racket/base)
                      (subtract-in (except-in racket/base ...) gref)))
@@ -43,12 +44,17 @@ extensions.
  @tech[#:doc rkt-ref]{assignment transformer}, whereas
  @racket[set!-expr] is used for the @tech{@racket[set!] expander}.}
 
-@defform[(:set! ([(var ...) val] ...) (store ...) reader writer)
-         #:grammar [(var @#,racket[id]) (store @#,racket[id])]
-         #:contracts ([val any] [reader any] [writer any])]{
- The result of a @tech{@racket[set!] expander}.  The sub-forms are
- respectively the @tech{lexical context}, @tech{store variables},
- @tech{reader expression}, and @tech{writer expression}.}
+@defproc[(set!-pack [bindings syntax?] [stores syntax?]
+                    [reader syntax?] [writer syntax?]
+                    [#:source src source-location? #f])
+         syntax?
+         provided-for-syntax]{
+ The result of a @tech{@racket[set!] expander}.  The resulting
+ @tech[#:doc rkt-ref]{syntax object} is given the
+ @tech[#:doc rkt-ref]{source-location} information of @racket[src].
+ The arguments are respectively the @tech{lexical context},
+ @tech{store variables}, @tech{reader expression}, and
+ @tech{writer expression}.}
 
 @defthing[prop:set!-expander
           (struct-type-property/c
@@ -61,7 +67,7 @@ extensions.
  @racket[prop:set!-expander] and results in a
  @tech{@racket[set!] expander}, which in turn takes the
  @tech[#:doc rkt-ref]{syntax object} of the @tech/rep{reference} and
- results in a valid @racket[:set!] form.}
+ results in a valid @racket[set!-pack]ed form.}
 
 @defproc[(set!-expander? [val any/c]) boolean?
          provided-for-syntax]{

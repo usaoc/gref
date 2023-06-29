@@ -15,15 +15,15 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide get-set!-expansion gref
+(provide get-set!-expansion gref set!-pack
          %gref %gref1s %grefns)
 
 (require gref/private/property
+         racket/match
          syntax/datum
          syntax/parse
          (for-syntax racket/base)
-         (for-template gref/private/literal
-                       racket/base))
+         (for-template racket/base))
 
 (define gref-desc-table (make-hasheqv))
 
@@ -73,19 +73,29 @@
   #:attributes ()
   (pattern [(_:id ...) _:expr]))
 
-(define-syntax-class (:set!-form track)
-  #:description ":set! form"
+(struct set!-packed (bindings stores reader writer))
+
+(define (set!-pack bindings stores reader writer #:source [src #f])
+  (datum->syntax #f (set!-packed bindings stores reader writer) src))
+
+(define-syntax-class (set!-packed-form track intro)
+  #:description "set!-packed form"
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
-  #:literals (:set!)
-  (pattern (:set! (~describe "lexical context" (%binding:binding ...))
-                  (~describe "store variables" (%store:id ...))
-                  (~describe "reader expression" %reader:expr)
-                  (~describe "writer expression" %writer:expr))
-    #:with (binding ...) (map track (datum (%binding ...)))
-    #:with (store ...) (map track (datum (%store ...)))
-    #:with reader (track #'%reader)
-    #:with writer (track #'%writer)))
+  (pattern _
+    #:do [(define val (syntax-e this-syntax))]
+    #:when (set!-packed? val)
+    #:cut
+    #:do [(match-define (set!-packed bindings stores reader writer)
+            val)]
+    #:with (~describe "lexical context" (_:binding ...)) bindings
+    #:with (~describe "store variables" (_:id ...)) stores
+    #:with (~describe "reader expression" _:expr) reader
+    #:with (~describe "writer expression" _:expr) writer
+    #:with (binding ...) (map track (syntax->list (intro bindings)))
+    #:with (store ...) (map track (syntax->list (intro stores)))
+    #:with reader (track (intro reader))
+    #:with writer (track (intro writer))))
 
 (define-syntax-class (%gref [num 1] [desc (make-gref-desc num)]
                             #:show [show desc])
@@ -112,7 +122,7 @@
           (define use-intro (make-syntax-introducer #t))
           (define expanded
             (proc (use-intro (intro this-syntax 'add) 'add)))]
-    #:with (~var || (:set!-form track)) (intro expanded)
+    #:with (~var || (set!-packed-form track intro)) expanded
     #:do [(define given (length (datum (store ...))))]
     #:fail-unless (check-num num given) (make-mismatch desc given)))
 

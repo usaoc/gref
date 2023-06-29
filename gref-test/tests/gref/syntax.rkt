@@ -29,11 +29,6 @@
 (define expect-expand-syntax-exn
   (expect-expand (expect-raise (expect-struct exn:fail:syntax))))
 
-(test-case ":set!"
-  (check-expect #':set! expect-expand-syntax-exn)
-  (check-expect #'(:set! ([(id) expr]) (store) reader writer)
-                expect-expand-syntax-exn))
-
 (define expect-expand-contract-exn
   (expect-expand (expect-raise (expect-struct exn:fail:contract))))
 
@@ -44,9 +39,9 @@
                   (define post (foo))
                   (define-accessor foo val-ref
                     (syntax-parser
-                      [(_:id) (syntax/loc this-syntax
-                                (:set! () (_obj)
-                                       val (set! val 'set)))]))
+                      [(_:id)
+                       (set!-pack #'() #'(_obj)
+                                  #'val #'(set! val 'set))]))
                   (list pre post))
                 '(init set))
   (check-expect #'(let ()
@@ -62,8 +57,8 @@
                       (define (expand _foo)
                         (syntax-parser
                           [(_:id)
-                           (syntax/loc this-syntax
-                             (:set! () (_obj) val (set! val 'set)))]))
+                           (set!-pack #'() #'(_obj)
+                                      #'val #'(set! val 'set))]))
                       (struct foo ()
                         #:property prop:set!-expander expand)
                       (foo)))
@@ -78,13 +73,30 @@
                     (set! (bar) 'ignored))
                 expect-expand-contract-exn))
 
+(test-case "set!-pack"
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (set!-pack 'not-stx #'bar #'baz #'quux)))
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (set!-pack #'foo 'not-stx #'baz #'quux)))
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (set!-pack #'foo #'bar 'not-stx #'quux)))
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (set!-pack #'foo #'bar #'baz 'not-stx)))
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (set!-pack #'foo #'bar #'baz #'quux #:source 'not-srcloc))))
+
 (test-case "gref"
   (check-expect (let ()
                   (define-accessor foo bar
                     (syntax-parser
                       [(_:id)
-                       (syntax/loc this-syntax
-                         (:set! ([(id) expr]) () reader writer))]))
+                       (set!-pack #'([(id) expr]) #'()
+                                  #'reader #'writer)]))
                   (define-syntax-parser baz
                     [(_:id (~var ref (gref 0)))
                      (syntax/loc this-syntax
@@ -98,8 +110,8 @@
                     (define-accessor foo bar
                       (syntax-parser
                         [(_:id)
-                         (syntax/loc this-syntax
-                           (:set! ([(id) expr]) () reader writer))]))
+                         (set!-pack #'([(id) expr]) #'()
+                                    #'reader #'writer)]))
                     (define-syntax-parser baz
                       [(_:id _:gref)
                        (syntax/loc this-syntax unreached)])
@@ -115,8 +127,8 @@
                   (define-accessor foo bar
                     (syntax-parser
                       [(_:id)
-                       (syntax/loc this-syntax
-                         (:set! ([(id) expr]) () reader writer))]))
+                       (set!-pack #'([(id) expr]) #'()
+                                  #'reader #'writer)]))
                   (define-syntax-parser baz
                     [(_:id ref)
                      (define-values (bindings stores reader writer)

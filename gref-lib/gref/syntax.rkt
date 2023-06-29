@@ -19,7 +19,8 @@
   (require gref/private/expand
            gref/private/property
            racket/contract
-           syntax/parse/experimental/provide)
+           syntax/parse/experimental/provide
+           syntax/srcloc)
   (define num/c (or/c #f exact-nonnegative-integer?))
   (provide (contract-out
              [get-set!-expansion
@@ -28,18 +29,20 @@
                                   "not currently expanding")
                    (values (listof syntax?) (listof identifier?)
                            syntax? syntax?))]
+             [set!-pack
+              (->* (syntax? syntax? syntax? syntax?)
+                   (#:source source-location?)
+                   syntax?)]
              [prop:set!-expander
               (struct-type-property/c
                (-> set!-expander? (-> syntax? syntax?)))]))
   (provide-syntax-class/contract [gref (syntax-class/c (num/c))]))
 
 (require gref/private/define
-         (only-in gref/private/literal :set!)
          (for-syntax (only-in gref/private/property set!-expander?)
                      (submod "." for-syntax)
                      (rename-in (submod "." for-syntax)
                                 [gref generalized-reference])))
 (provide (all-from-out gref/private/define)
-         (all-from-out gref/private/literal)
          (for-syntax (all-from-out gref/private/property)
                      (all-from-out (submod "." for-syntax))))
