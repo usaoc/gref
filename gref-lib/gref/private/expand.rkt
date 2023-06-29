@@ -102,16 +102,7 @@
   #:description show
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
-  (pattern id:id
-    #:cut
-    #:fail-unless (check-num num 1) (make-mismatch desc 1)
-    #:with (binding ...) '()
-    #:do [(define track (make-track this-syntax #'id))]
-    #:with obj ((make-syntax-introducer) #'obj 'add)
-    #:with (store ...) (list (track #'obj))
-    #:with reader (track #'id)
-    #:with writer (track #'(set! id obj)))
-  (pattern (acc:id-trans . _)
+  (pattern (~or* (acc:id-trans . _) acc:id-trans)
     #:cut
     #:do [(define val (datum acc.val))
           (define make-proc (set!-expander-ref val get-unbound))]
@@ -124,7 +115,16 @@
             (proc (use-intro (intro this-syntax 'add) 'add)))]
     #:with (~var || (set!-packed-form track intro)) expanded
     #:do [(define given (length (datum (store ...))))]
-    #:fail-unless (check-num num given) (make-mismatch desc given)))
+    #:fail-unless (check-num num given) (make-mismatch desc given))
+  (pattern id:id
+    #:cut
+    #:fail-unless (check-num num 1) (make-mismatch desc 1)
+    #:with (binding ...) '()
+    #:do [(define track (make-track this-syntax #'id))]
+    #:with obj ((make-syntax-introducer) #'obj 'add)
+    #:with (store ...) (list (track #'obj))
+    #:with reader (track #'id)
+    #:with writer (track #'(set! id obj))))
 
 (define-syntax-class %gref1s
   #:description "1-valued generalized references"

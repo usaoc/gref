@@ -81,14 +81,17 @@ extensions.
  @racket[number] is @racket[#f], matches any @tech/rep{reference}.  A
  @tech/rep{reference} is one of the following:
 
- @specsubform[var #:grammar [(var @#,racket[id])]]{
-  A variable as a @tech/rep{reference}.}
-
  @specsubform[(acc . subforms) #:grammar [(acc @#,racket[id])]]{
   An arbitrary @tech/rep{reference} whose exact form is specified by
   the @tech{@racket[set!] expander} of @racket[acc].  Its
   @tech[#:doc rkt-guide]{transformer binding} must implement
   @racket[prop:set!-expander].}
+
+ @specsubform[acc #:grammar [(acc @#,racket[id])]]{
+  Like the above form, but in the form of an identifier.}
+
+ @specsubform[var #:grammar [(var @#,racket[id])]]{
+  A variable as a @tech/rep{reference}.}
 
  The following @tech[#:doc stx-parse]{syntax-valued attributes} are
  bound:

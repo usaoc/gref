@@ -51,12 +51,12 @@
 
 (test-case "prop:set!-expander"
   (check-expect (let ([val 'init])
-                  (set! (bar) 'ignored)
+                  (set! bar 'ignored)
                   (define-syntax bar
                     (let ()
                       (define (expand _foo)
                         (syntax-parser
-                          [(_:id)
+                          [_:id
                            (set!-pack #'() #'(_obj)
                                       #'val #'(set! val 'set))]))
                       (struct foo ()
@@ -70,7 +70,7 @@
                               (struct foo ()
                                 #:property prop:set!-expander expand)
                               (foo))])
-                    (set! (bar) 'ignored))
+                    (set! bar 'ignored))
                 expect-expand-contract-exn))
 
 (test-case "set!-pack"
