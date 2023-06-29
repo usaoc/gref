@@ -108,10 +108,11 @@
     #:fail-when (and (unbound? make-proc) #'acc) (make-illegal val)
     #:do [(define proc (make-proc val))
           (define track (make-track this-syntax #'acc))
+          (define intro (make-syntax-introducer))
+          (define use-intro (make-syntax-introducer #t))
           (define expanded
-            (syntax-local-apply-transformer
-             proc #'acc 'expression #f this-syntax))]
-    #:with (~var || (:set!-form track)) expanded
+            (proc (use-intro (intro this-syntax 'add) 'add)))]
+    #:with (~var || (:set!-form track)) (intro expanded)
     #:do [(define given (length (datum (store ...))))]
     #:fail-unless (check-num num given) (make-mismatch desc given)))
 
