@@ -56,9 +56,10 @@
                     (let ()
                       (define (expand _foo)
                         (syntax-parser
-                          [_:id
+                          [(_:id)
                            (set!-pack #'() #'(_obj)
-                                      #'val #'(set! val 'set))]))
+                                      #'val #'(set! val 'set))]
+                          [who:id (syntax/loc this-syntax (who))]))
                       (struct foo ()
                         #:property prop:set!-expander expand)
                       (foo)))

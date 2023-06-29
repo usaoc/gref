@@ -78,14 +78,11 @@
 (define (set!-pack bindings stores reader writer #:source [src #f])
   (datum->syntax #f (set!-packed bindings stores reader writer) src))
 
-(define-syntax-class (set!-packed-form track intro)
+(define-syntax-class (set!-packed-form val track intro)
   #:description "set!-packed form"
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
   (pattern _
-    #:do [(define val (syntax-e this-syntax))]
-    #:when (set!-packed? val)
-    #:cut
     #:do [(match-define (set!-packed bindings stores reader writer)
             val)]
     #:with (~describe "lexical context" (_:binding ...)) bindings
@@ -96,6 +93,17 @@
     #:with (store ...) (map track (syntax->list (intro stores)))
     #:with reader (track (intro reader))
     #:with writer (track (intro writer))))
+
+(define-syntax-class (%gref-cont num desc track intro)
+  #:description #f
+  #:commit
+  #:attributes ([binding 1] [store 1] reader writer)
+  (pattern (~or* (~and _
+                       (~do (define val (syntax-e this-syntax)))
+                       (~fail #:unless (set!-packed? val)) ~!
+                       (~var || (set!-packed-form val track intro)))
+                 (~parse (~var || (%gref num desc))
+                         (track (intro this-syntax))))))
 
 (define-syntax-class (%gref [num 1] [desc (make-gref-desc num)]
                             #:show [show desc])
@@ -113,9 +121,7 @@
           (define use-intro (make-syntax-introducer #t))
           (define expanded
             (proc (use-intro (intro this-syntax 'add) 'add)))]
-    #:with (~var || (set!-packed-form track intro)) expanded
-    #:do [(define given (length (datum (store ...))))]
-    #:fail-unless (check-num num given) (make-mismatch desc given))
+    #:with (~var || (%gref-cont num desc track intro)) expanded)
   (pattern id:id
     #:cut
     #:fail-unless (check-num num 1) (make-mismatch desc 1)

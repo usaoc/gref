@@ -49,7 +49,9 @@ extensions.
                     [#:source src source-location? #f])
          syntax?
          provided-for-syntax]{
- The result of a @tech{@racket[set!] expander}.  The resulting
+ Returns a @deftech{fully-expanded} @racket[_number]-@tech/rep{valued}
+ @tech/rep{reference}, where @racket[_number] is decided by the number
+ of @racket[id]s in @racket[stores].  The resulting
  @tech[#:doc rkt-ref]{syntax object} is given the
  @tech[#:doc rkt-ref]{source-location} information of @racket[src].
  The arguments are respectively the @tech{lexical context},
@@ -66,8 +68,9 @@ extensions.
  property value takes the structure instance that implements
  @racket[prop:set!-expander] and results in a
  @tech{@racket[set!] expander}, which in turn takes the
- @tech[#:doc rkt-ref]{syntax object} of the @tech/rep{reference} and
- results in a valid @racket[set!-pack]ed form.}
+ @tech[#:doc rkt-ref]{syntax object} of a
+ @racket[_number]-@tech/rep{valued} @tech/rep{reference} and results
+ in another @racket[_number]-@tech/rep{valued} @tech/rep{reference}.}
 
 @defproc[(set!-expander? [val any/c]) boolean?
          provided-for-syntax]{
@@ -78,23 +81,33 @@ extensions.
               (_ [number (or/c #f exact-nonnegative-integer?) 1])
               #:both provided-for-syntax]{
  Matches a @racket[number]-@tech/rep{valued} @tech/rep{reference}.  If
- @racket[number] is @racket[#f], matches any @tech/rep{reference}.  A
- @tech/rep{reference} is one of the following:
+ @racket[number] is @racket[#f], matches any @tech/rep{reference}.
+ The @tech/rep{reference} is recursively @deftech/rep{expanded} until
+ @tech{fully expanded} as follows:
 
- @specsubform[(acc . subforms) #:grammar [(acc @#,racket[id])]]{
-  An arbitrary @tech/rep{reference} whose exact form is specified by
-  the @tech{@racket[set!] expander} of @racket[acc].  Its
-  @tech[#:doc rkt-guide]{transformer binding} must implement
-  @racket[prop:set!-expander].}
+ @itemlist[
+ @item{If it is a valid @racket[set!-pack]ed form, the
+   @tech/rep{expansion} is complete;}
+ @item{If it is an @tech[#:doc rkt-ref]{identifier} with a
+   @tech[#:doc rkt-guide]{transformer binding} or a
+   @tech[#:doc rkt-ref]{syntax-object} pair whose first element is
+   such an @tech[#:doc rkt-ref]{identifier}, the
+   @tech[#:doc rkt-guide]{transformer binding} is used to continue;}
+ @item{Otherwise, if it is an @tech[#:doc rkt-ref]{identifier}, a
+   @tech{@racket[set!] expander} for
+   @tech[#:doc rkt-ref]{variables} is used to continue.}]
 
- @specsubform[acc #:grammar [(acc @#,racket[id])]]{
-  Like the above form, but in the form of an identifier.}
+ If the @tech[#:doc rkt-guide]{transformer binding} refers to a
+ @racket[set!-expander?] value, it is used to produce a
+ @tech{@racket[set!] expander}, which in turn receives the
+ @tech[#:doc rkt-ref]{syntax object} of the @tech/rep{reference}
+ @tech/rep{expanded} so far.  Otherwise, the matching fails and no
+ further @tech/rep{expansion} is done.  During each
+ @tech/rep{expansion} step, @tech[#:doc rkt-ref]{scopes} and
+ @tech[#:doc rkt-ref]{syntax properties} are accoridingly manipulated.
 
- @specsubform[var #:grammar [(var @#,racket[id])]]{
-  A variable as a @tech/rep{reference}.}
-
- The following @tech[#:doc stx-parse]{syntax-valued attributes} are
- bound:
+ From the resulting @racket[set!-pack]ed form, the following
+ @tech[#:doc stx-parse]{syntax-valued attributes} are bound:
 
  @defsubtogether[[@defattr[binding (listof syntax?)]
                   @defattr[store (listof identifier?)]
@@ -104,8 +117,8 @@ extensions.
   @tech{reader expression}, and @tech{writer expression}
   respectively.}
 
- As in @racket[static], matching fails unless
- @racket[(syntax-transforming?)].}
+ If @racket[syntax-transforming?] returns @racket[#f], the matching
+ fails and no @tech/rep{expansion} is done.}
 
 @defproc[(get-set!-expansion
           [ref-stx syntax?]
@@ -113,9 +126,11 @@ extensions.
          (values (listof syntax?) (listof identifier?)
                  syntax? syntax?)
          provided-for-syntax]{
- The procedural interface for @racket[gref].  Expands @racket[ref-stx]
- as a @racket[(gref number)] form and returns the bound
- @tech[#:doc stx-parse]{syntax-valued attributes} in the documented
- order.  As in @racket[syntax-local-apply-transformer], the
- @racket[exn:fail:contract] exception is @racket[raise]d unless
- @racket[(syntax-transforming?)].}
+ The procedural interface for @racket[gref].  @tech/rep{Expands}
+ @racket[ref-stx] as a @racket[(gref number)] form and returns the
+ bound @tech[#:doc stx-parse]{syntax-valued attributes} in the
+ documented order.
+
+ If @racket[syntax-transforming?] returns @racket[#f], the
+ @racket[exn:fail:contract] exception is @racket[raise]d and no
+ @tech/rep{expansion} is done.}

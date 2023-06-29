@@ -31,6 +31,10 @@
                (in-hash
                 (hasheq
                  (lambda (base suffix)
+                   (define root (string-trim base "d" #:left? #f))
+                   (values (string-append root suffix) base))
+                 #hasheq(("expand" . ("ded" "sion")))
+                 (lambda (base suffix)
                    (define root (string-trim base "e" #:left? #f))
                    (values (string-append root suffix) base))
                  #hasheq(("access" . ("es"))

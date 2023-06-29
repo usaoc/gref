@@ -41,12 +41,13 @@ validate the results.  When an inapproapriate result is detected, the
 
 indicates that @racket[form] is in a @deftech{@racket[set!] context},
 where the @tech{@racket[set!] expander} is invoked and produces a
-valid @racket[set!-pack]ed form.  A @tech{@racket[set!] context} is
-available in certain sub-form positions of @tech{accessors} and
-@tech{modify macros} where a @tech/rep{reference} is explicitly
-required.  All documented @tech{accessors} extend the base Racket
-procedures, and thus expand into procedure applications in other
-contexts (see @racket[define-accessor] for the exact behaviors).
+further @tech/rep{expanded} @tech/rep{reference}.  A
+@tech{@racket[set!] context} is available in certain sub-form
+positions of @tech{accessors} and @tech{modify macros} where a
+@tech/rep{reference} is explicitly required.  All documented
+@tech{accessors} extend the base Racket procedures, and thus acts as
+procedures in other contexts (see @racket[define-accessor] for the
+exact behaviors).
 
 @defacc[(set! (values ref ...) val)
         #:grammar [(ref @#,racket[gref])]
