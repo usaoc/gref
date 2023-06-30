@@ -172,6 +172,7 @@ not within the dynamic extent of a macro transformation"))
 
 (define (get-set!-expansion ref-stx [num 1])
   (syntax-parse ref-stx
+    #:context 'get-set!-expansion
     [ref
      #:declare ref (%gref num)
      (values (datum (ref.binding ...)) (datum (ref.store ...))
