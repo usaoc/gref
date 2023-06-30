@@ -216,8 +216,8 @@
               maybe-arg (... ...) . maybe-rest)
         (~@ #:declare arg0-expr expr) ...
         #:cut
-        #:with (~var arg (args more-idx))
-        (syntax/loc this-syntax (maybe-arg (... ...)))
+        #:with arg (syntax/loc this-syntax (maybe-arg (... ...)))
+        #:declare arg (args more-idx)
         #:with rest:rest #'maybe-rest
         (syntax/loc this-syntax
           (begin
