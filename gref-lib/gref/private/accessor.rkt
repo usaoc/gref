@@ -90,24 +90,10 @@
                          (~optional (~seq #:vector/c vector/c:id)))
                    ...))))
 
-(define (vector-valid-range len)
-  (string-append "[0, " (number->string (unsafe-fx- len 1)) "]"))
-
 (define-syntax-parser define-vector-ref
   [(_:id vector:id opt:opt)
    #:do [(define (vector-id fmt-str [ctx #'vector])
-           (format-id ctx fmt-str #'vector #:source #'vector))
-         (define message-str "index is out of range")
-         (define (make-message0-str str)
-           (string-append message-str " for empty " str))
-         (define-values (message0-str type)
-           (match (datum opt.type)
-             [#f
-              (define str
-                (symbol->immutable-string (syntax-e #'vector)))
-              (values (make-message0-str str)
-                      (datum->syntax #'here str #'vector))]
-             [stx (values (make-message0-str (syntax-e stx)) stx)]))]
+           (format-id ctx fmt-str #'vector #:source #'vector))]
    #:with %name (vector-id "%~a-ref")
    #:with name (vector-id "~a-ref")
    #:with vector-expr (vector-id "~a-expr" #'here)
@@ -116,25 +102,19 @@
    #:with vector-ref (vector-id "unsafe-~a-ref")
    #:with vector-set! (vector-id "unsafe-~a-set!")
    #:with vector-length (vector-id "unsafe-~a-length")
-   #:with message (datum->syntax #'here message-str #'here)
-   #:with message0 (datum->syntax #'here message0-str #'here)
-   #:with type type
+   #:with type (or (datum opt.type)
+                   (datum->syntax #'here
+                                  (symbol->immutable-string
+                                   (syntax-e #'vector))
+                                  #'vector))
    #:with check-vector+pos (vector-id "check-~a+pos" #'here)
    #:with check-vector+pos-def
    (syntax/loc this-syntax
      (define (check-vector+pos vector pos)
        (let ([len (vector-length vector)])
          (unless (and (fixnum? pos) (unsafe-fx< pos len))
-           (if (unsafe-fx= len 0)
-               (raise-arguments-error 'name message0
-                                      "index" pos
-                                      type vector)
-               (raise-arguments-error 'name message
-                                      "index" pos
-                                      "valid range"
-                                      (unquoted-printing-string
-                                       (vector-valid-range len))
-                                      type vector))))))
+           (raise-range-error 'name type ""
+                              pos vector 0 (unsafe-fx- len 1))))))
    #:attr check-obj (and (datum opt.obj?) #'check-obj)
    #:attr check-obj-def
    (and (datum check-obj)
