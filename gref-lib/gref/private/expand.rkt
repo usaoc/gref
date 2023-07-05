@@ -126,7 +126,9 @@ identifier with transformer binding (possibly in gref/set! space)"
           (define use-intro (make-syntax-introducer #t))
           (define expanded
             (proc (use-intro (intro this-syntax 'add) 'add)))]
-    #:with (~var || (%gref-cont num desc track intro)) expanded)
+    #:with (~var || (%gref-cont num desc track intro)) expanded
+    #:do [(define given (length (datum (store ...))))]
+    #:fail-unless (check-num num given) (make-mismatch desc given))
   (pattern id:id
     #:cut
     #:fail-unless (check-num num 1) (make-mismatch desc 1)
