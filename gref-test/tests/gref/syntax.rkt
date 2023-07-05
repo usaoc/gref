@@ -49,31 +49,6 @@
                     'unreached)
                 expect-expand-contract-exn))
 
-(test-case "prop:set!-expander"
-  (check-expect (let ([val 'init])
-                  (set! bar 'ignored)
-                  (define-syntax bar
-                    (let ()
-                      (define (expand _foo)
-                        (syntax-parser
-                          [(_:id)
-                           (set!-pack #'() #'(_obj)
-                                      #'val #'(set! val 'set))]
-                          [who:id (syntax/loc this-syntax (who))]))
-                      (struct foo ()
-                        #:property prop:set!-expander expand)
-                      (foo)))
-                  val)
-                'set)
-  (check-expect #'(let-syntax
-                      ([bar (let ()
-                              (define ((expand _foo) _stx) 'not-stx)
-                              (struct foo ()
-                                #:property prop:set!-expander expand)
-                              (foo))])
-                    (set! bar 'ignored))
-                expect-expand-contract-exn))
-
 (test-case "set!-pack"
   (check-exn exn:fail:contract?
     (lambda ()
@@ -90,6 +65,33 @@
   (check-exn exn:fail:contract?
     (lambda ()
       (set!-pack #'foo #'bar #'baz #'quux #:source 'not-srcloc))))
+
+(test-case "prop:set!-expander"
+  (check-expect (let ([val 'init])
+                  (set! bar 'ignored)
+                  (define-syntax bar
+                    (let ()
+                      (define (expand _foo)
+                        (syntax-parser
+                          [(_:id)
+                           (set!-pack #'() #'(_obj)
+                                      #'val #'(set! val 'set))]
+                          [who:id (syntax/loc this-syntax (who))]))
+                      (struct foo ()
+                        #:property prop:set!-expander expand)
+                      (foo)))
+                  val)
+                'set)
+  (check-expect #'(let ()
+                    (set! bar 'ignored)
+                    (define-syntax bar
+                      (let ()
+                        (define ((expand _foo) _stx) 'not-stx)
+                        (struct foo ()
+                          #:property prop:set!-expander expand)
+                        (foo)))
+                    'unreached)
+                expect-expand-contract-exn))
 
 (test-case "gref"
   (check-expect (let ()
@@ -108,15 +110,15 @@
                   (baz (foo)))
                 '(([(id) expr]) () reader writer))
   (check-expect #'(let ()
+                    (baz (foo))
                     (define-accessor foo bar
                       (syntax-parser
                         [(_:id)
                          (set!-pack #'([(id) expr]) #'()
                                     #'reader #'writer)]))
                     (define-syntax-parser baz
-                      [(_:id _:gref)
-                       (syntax/loc this-syntax unreached)])
-                    (baz (foo)))
+                      [(_:id _:gref) #''no-exn])
+                    'unreached)
                 expect-expand-syntax-exn))
 
 (test-case "generalized-reference"
@@ -138,13 +140,15 @@
                        '(#,bindings #,stores #,reader #,writer))])
                   (baz (foo)))
                 '(([(id) expr]) () reader writer))
-  (check-expect #'(let-syntax ([foo (lambda (stx)
-                                      (get-set!-expansion 'not-stx 0)
-                                      (syntax/loc stx no-exn))])
+  (check-expect #'(let ()
+                    (define-syntax (foo _stx)
+                      (get-set!-expansion 'not-stx 0)
+                      #''unreached)
                     (foo))
                 expect-expand-contract-exn)
-  (check-expect #'(let-syntax ([foo (lambda (stx)
-                                      (get-set!-expansion #'foo -1)
-                                      (syntax/loc stx no-exn))])
+  (check-expect #'(let ()
+                    (define-syntax (foo _stx)
+                      (get-set!-expansion #'foo -1)
+                      #''unreached)
                     (foo))
                 expect-expand-contract-exn))

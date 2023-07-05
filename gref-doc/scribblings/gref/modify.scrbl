@@ -20,12 +20,14 @@
 @(require scribblings/gref/example
           scribblings/gref/lib
           scribblings/gref/tech
-          (for-label gref
+          (for-label gref/base
+                     gref/syntax
                      racket/class
                      racket/contract/base
                      syntax/parse
                      (prefix-in base- racket/base)
-                     (subtract-in (except-in racket/base ...) gref)))
+                     (subtract-in (except-in racket/base ...)
+                                  gref/base)))
 
 @title[#:tag "modify"]{Modify Macros}
 

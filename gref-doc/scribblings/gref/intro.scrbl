@@ -24,7 +24,8 @@
           (for-label gref/base
                      racket/contract/base
                      (except-in syntax/parse integer)
-                     (subtract-in (except-in racket/base ...) gref)))
+                     (subtract-in (except-in racket/base ...)
+                                  gref/base)))
 
 @title[#:tag "introduction"]{Introduction}
 

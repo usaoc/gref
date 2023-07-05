@@ -37,6 +37,12 @@
                      syntax/datum
                      syntax/parse))
 
+(define-accessor %values values
+  (syntax-parser
+    [(_:id . ref:%gref1s)
+     (set!-pack #'(ref.binding ...) #'(ref.store ...)
+                #'ref.reader #'ref.writer)]))
+
 (define-for-syntax (make-mcar mcar set-mcar!)
   (syntax-parser
     [(_:id pair-expr)
@@ -45,12 +51,6 @@
      #:with set-mcar! set-mcar!
      (set!-pack #'([(pair) pair-expr.c]) #'(obj)
                 #'(mcar pair) #'(set-mcar! pair obj))]))
-
-(define-accessor %values values
-  (syntax-parser
-    [(_:id . ref:%gref1s)
-     (set!-pack #'(ref.binding ...) #'(ref.store ...)
-                #'ref.reader #'ref.writer)]))
 
 (define-accessor %mcar mcar
   (make-mcar #'unsafe-mcar #'unsafe-set-mcar!))

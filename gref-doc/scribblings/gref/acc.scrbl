@@ -20,10 +20,12 @@
 @(require scribblings/gref/def
           scribblings/gref/lib
           scribblings/gref/tech
-          (for-label gref
+          (for-label gref/base
+                     gref/syntax
                      racket/contract/base
                      (prefix-in base- racket/base)
-                     (subtract-in (except-in racket/base ...) gref)))
+                     (subtract-in (except-in racket/base ...)
+                                  gref/base)))
 
 @title[#:tag "accessor"]{Accessors}
 

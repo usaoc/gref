@@ -16,17 +16,16 @@
  along with this program.  If not, see
  <https://www.gnu.org/licenses/>.}
 
-@(require racket/require)
 @(require scribblings/gref/def
           scribblings/gref/lib
           scribblings/gref/tech
           (for-label gref/syntax
+                     racket/base
                      racket/contract
                      syntax/parse
                      syntax/srcloc
                      syntax/transformer
-                     (prefix-in base- racket/base)
-                     (subtract-in (except-in racket/base ...) gref)))
+                     (prefix-in base- racket/base)))
 
 @title[#:tag "syntax"]{The Syntax Module}
 
