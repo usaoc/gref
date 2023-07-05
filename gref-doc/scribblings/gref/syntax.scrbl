@@ -139,7 +139,7 @@ extensions.
 
 @defproc[(get-set!-expansion
           [ref-stx syntax?]
-          [number (or/c #f exact-nonnegative-integer?)])
+          [number (or/c #f exact-nonnegative-integer?) 1])
          (values (listof syntax?) (listof identifier?)
                  syntax? syntax?)
          provided-for-syntax]{

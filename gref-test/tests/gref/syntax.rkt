@@ -172,7 +172,7 @@
                 '(([(id) expr]) () reader writer))
   (check-expect #'(let ()
                     (define-syntax (foo _stx)
-                      (get-set!-expansion 'not-stx 0)
+                      (get-set!-expansion 'not-stx)
                       #''unreached)
                     (foo))
                 expect-expand-contract-exn)
