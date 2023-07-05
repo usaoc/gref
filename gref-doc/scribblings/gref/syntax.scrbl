@@ -24,8 +24,7 @@
                      racket/contract
                      syntax/parse
                      syntax/srcloc
-                     syntax/transformer
-                     (prefix-in base- racket/base)))
+                     syntax/transformer))
 
 @title[#:tag "syntax"]{The Syntax Module}
 
@@ -34,14 +33,18 @@
 The syntax module @racket[provide]s various bindings useful for user
 extensions.
 
-@defform[(define-accessor name expr-id set!-expr)
-         #:grammar [(name @#,racket[id]) (expr-id @#,racket[id])]
-         #:contracts ([set!-expr (-> syntax? syntax?)])]{
- Defines the @tech{accessor} @racket[name].  The result of
- @racket[(make-variable-like-transformer #'expr-id)] is used as both
- the @tech[#:doc rkt-ref]{transformer} and
- @tech[#:doc rkt-ref]{assignment transformer}, whereas
- @racket[set!-expr] is used for the @tech{@racket[set!] expander}.}
+@defform*[[(define-set!-syntax name val)
+           (define-set!-syntax (head args) body ...+)]
+         #:grammar [(name @#,racket[id])]
+         #:contracts ([val any/c])]{
+ Like @racket[define-syntax], but the created binding is in the
+ @racket['gref/set!] @tech[#:doc rkt-ref]{binding space}.}
+
+@defform[(define-set!-syntaxes (name ...) vals)
+         #:grammar [(name @#,racket[id])]
+         #:contracts ([vals any])]{
+ Like @racket[define-syntaxes], but the created bindings are in the
+ @racket['gref/set!] @tech[#:doc rkt-ref]{binding space}.}
 
 @defproc[(set!-pack [bindings syntax?] [stores syntax?]
                     [reader syntax?] [writer syntax?]
@@ -76,6 +79,12 @@ extensions.
  Returns @racket[#t] if @racket[val] implements
  @racket[prop:set!-expander], @racket[#f] otherwise.}
 
+@defproc[(make-set!-expander [proc (-> syntax? syntax?)])
+         set!-expander?
+         provided-for-syntax]{
+ Returns an implementation of @racket[prop:set!-expander] that uses
+ @racket[proc] as the @tech{@racket[set!] expander}.}
+
 @defcls/alias[gref generalized-reference
               (_ [number (or/c #f exact-nonnegative-integer?) 1])
               #:both provided-for-syntax]{
@@ -95,6 +104,15 @@ extensions.
  @item{Otherwise, if it is an @tech[#:doc rkt-ref]{identifier}, a
    @tech{@racket[set!] expander} for
    @tech[#:doc rkt-ref]{variables} is used to continue.}]
+
+ Each @tech[#:doc rkt-guide]{transformer binding} is resolved in the
+ @racket['gref/set!] @tech[#:doc rkt-ref]{binding space}.  Due to the
+ way @tech[#:doc rkt-ref]{scope sets} works, a
+ @tech[#:doc rkt-guide]{transformer binding} in the
+ @tech[#:doc rkt-ref]{default binding space} will be used
+ unless another @tech[#:doc rkt-guide]{transformer binding} in the
+ @racket['gref/set!] @tech[#:doc rkt-ref]{binding space}
+ @tech[#:doc rkt-ref]{shadows} it.
 
  If the @tech[#:doc rkt-guide]{transformer binding} refers to a
  @racket[set!-expander?] value, it is used to produce a

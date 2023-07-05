@@ -16,18 +16,15 @@
  along with this program.  If not, see
  <https://www.gnu.org/licenses/>.}
 
-@(require racket/require)
 @(require scribblings/gref/example
           scribblings/gref/lib
           scribblings/gref/tech
-          (for-label gref/base
-                     gref/syntax
+          (for-label gref/syntax
                      racket/class
                      racket/contract/base
                      syntax/parse
-                     (prefix-in base- racket/base)
-                     (subtract-in (except-in racket/base ...)
-                                  gref/base)))
+                     (except-in racket/base ... set! set!-values)
+                     (only-space-in #f gref/base)))
 
 @title[#:tag "modify"]{Modify Macros}
 
@@ -172,5 +169,4 @@ is always @|void-const|.
  @tech/rep{stored} in @racket[ref].}
 
 @defform[(mpop! ref) #:grammar [(ref @#,racket[gref])]]{
- Like @racket[pop!], but uses @racket[base-mcar] and
- @racket[base-mcdr].}
+ Like @racket[pop!], but uses @racket[mcar] and @racket[mcdr].}

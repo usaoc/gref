@@ -15,8 +15,8 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide defacc defattr defcls/alias defsubtogether
-         provided-for-syntax)
+(provide defset! defattr defcls/alias defsubtogether
+         provided-for-syntax racket/set!)
 
 (require scribble/manual
          scribblings/gref/lib
@@ -25,13 +25,18 @@
                     (only-in racket/base for-syntax))
          (for-syntax racket/base))
 
+(define-for-syntax set!-intro
+  (make-interned-syntax-introducer 'gref/set!))
+
 (begin-for-syntax
   (define-syntax-class set!-form
     #:commit
-    #:attributes (name)
+    #:attributes (set!-name)
     #:literals (set!)
-    (pattern (set! name:id _:id))
-    (pattern (set! (name:id . _) _:id)))
+    (pattern (set! name:id _:id)
+      #:with set!-name (set!-intro #'name 'add))
+    (pattern (set! (name:id . _) _:id)
+      #:with set!-name (set!-intro #'name 'add)))
   (define-syntax-class contract
     #:commit
     #:attributes ()
@@ -47,7 +52,7 @@
     #:attributes ([grammar 1])
     (pattern (~optional (~seq #:grammar [grammar:grammar ...])))))
 
-(define-syntax-parser defacc
+(define-syntax-parser defset!
   [(_:id link-target:link-target-opt
          set!-form:set!-form
          grammar:grammar-opt
@@ -55,9 +60,8 @@
          pre:expr ...)
    (syntax/loc this-syntax
      (defform
-       #:kind "accessor"
        (~? (~@ #:link-target? link-target.link-target))
-       #:id set!-form.name
+       #:id set!-form.set!-name
        #:literals (set!)
        set!-form
        (~? (~@ #:grammar [grammar.grammar ...]))
@@ -102,3 +106,8 @@
 
 (define provided-for-syntax
   (list (smaller "Provided " (racket for-syntax) ".") "\n" "\n"))
+
+(define-syntax-parser racket/set!
+  [(_:id form)
+   #:with set!-form (set!-intro #'form 'add)
+   (syntax/loc this-syntax (racket set!-form))])

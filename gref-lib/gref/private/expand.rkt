@@ -19,6 +19,7 @@
          %gref %gref1s %grefns)
 
 (require gref/private/property
+         gref/private/space
          racket/match
          syntax/datum
          syntax/parse
@@ -58,13 +59,16 @@
 
 (define (unbound? val) (eq? val unbound))
 
-(define-syntax-class id-trans
-  #:description "identifier with transformer binding"
+(define-syntax-class set!-trans
+  #:description "\
+identifier with transformer binding (possibly in gref/set! space)"
   #:commit
-  #:attributes (val)
+  #:attributes (id val)
   (pattern _:id
-    #:do [(define val (syntax-local-value this-syntax get-unbound))]
+    #:do [(define set!-id (in-set!-space this-syntax))
+          (define val (syntax-local-value set!-id get-unbound))]
     #:when (not (unbound? val))
+    #:with id set!-id
     #:attr val val))
 
 (define-syntax-class binding
@@ -110,13 +114,14 @@
   #:description show
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
-  (pattern (~or* (acc:id-trans . _) acc:id-trans)
+  (pattern (~or* (ref:set!-trans . _) ref:set!-trans)
     #:cut
-    #:do [(define val (datum acc.val))
+    #:do [(define id #'ref.id)
+          (define val (datum ref.val))
           (define make-proc (set!-expander-ref val get-unbound))]
-    #:fail-when (and (unbound? make-proc) #'acc) (make-illegal val)
+    #:fail-when (and (unbound? make-proc) id) (make-illegal val)
     #:do [(define proc (make-proc val))
-          (define track (make-track this-syntax #'acc))
+          (define track (make-track this-syntax id))
           (define intro (make-syntax-introducer))
           (define use-intro (make-syntax-introducer #t))
           (define expanded

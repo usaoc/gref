@@ -15,7 +15,14 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide prop:set!-expander set!-expander? set!-expander-ref)
+(provide prop:set!-expander set!-expander? set!-expander-ref
+         make-set!-expander)
 
 (define-values (prop:set!-expander set!-expander? set!-expander-ref)
   (make-struct-type-property 'set!-expander))
+
+(struct make-set!-expander (proc)
+  #:omit-define-syntaxes
+  #:reflection-name 'set!-expander
+  #:property prop:set!-expander (lambda (self)
+                                  (make-set!-expander-proc self)))

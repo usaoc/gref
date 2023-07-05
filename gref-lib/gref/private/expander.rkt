@@ -15,14 +15,20 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(require racket/provide
-         (for-syntax racket/base
-                     racket/match))
-(provide (filtered-out
-          (match-lambda [(regexp #rx"%(.+)" (list _ base)) base])
-          (combine-out
-           %values %mcar %mcdr %hash-ref %bytes-ref %string-ref
-           %vector-ref %vector*-ref %unbox %unbox*)))
+(require (for-syntax racket/base
+                     racket/provide-transform
+                     syntax/parse))
+(define-for-syntax (expand-set!-out stx modes)
+  (syntax-parse stx
+    [(_:id spec ...)
+     (expand-export
+      (syntax/loc this-syntax
+        (combine-out (~@ spec (for-space gref/set! spec)) ...))
+      modes)]))
+(define-syntax set!-out (make-provide-transformer expand-set!-out))
+(provide (set!-out
+          values mcar mcdr hash-ref bytes-ref string-ref
+          vector-ref vector*-ref unbox unbox*))
 
 (require gref/private/define
          racket/contract/base
@@ -30,18 +36,26 @@
          syntax/parse/define
          (for-syntax gref/private/class
                      gref/private/expand
+                     gref/private/property
                      racket/base
-                     racket/match
                      racket/symbol
                      racket/syntax
                      syntax/datum
                      syntax/parse))
 
-(define-accessor %values values
-  (syntax-parser
-    [(_:id . ref:%gref1s)
-     (set!-pack #'(ref.binding ...) #'(ref.store ...)
-                #'ref.reader #'ref.writer)]))
+(define-syntax-parser define-set!-expander
+  [(_:id name:id proc:expr)
+   #'(define-set!-syntax name (make-set!-expander proc))])
+
+(define-syntax-parser define-set!-parser
+  [(_:id name:id . tail)
+   (syntax/loc this-syntax
+     (define-set!-expander name (syntax-parser . tail)))])
+
+(define-set!-parser values
+  [(_:id . ref:%gref1s)
+   (set!-pack #'(ref.binding ...) #'(ref.store ...)
+              #'ref.reader #'ref.writer)])
 
 (define-for-syntax (make-mcar mcar set-mcar!)
   (syntax-parser
@@ -52,28 +66,27 @@
      (set!-pack #'([(pair) pair-expr.c]) #'(obj)
                 #'(mcar pair) #'(set-mcar! pair obj))]))
 
-(define-accessor %mcar mcar
+(define-set!-expander mcar
   (make-mcar #'unsafe-mcar #'unsafe-set-mcar!))
 
-(define-accessor %mcdr mcdr
+(define-set!-expander mcdr
   (make-mcar #'unsafe-mcdr #'unsafe-set-mcdr!))
 
 (define mutable/c (not/c immutable?))
 
-(define-accessor %hash-ref hash-ref
-  (syntax-parser
-    [(_:id hash-expr key-expr:expr (~optional failure-expr))
-     #:declare hash-expr (expr/c #'hash?)
-     #:declare failure-expr (expr/c #'failure-result/c)
-     #:attr failure (and (datum failure-expr) #'failure)
-     #:with mutable-hash (syntax/loc #'hash-expr hash)
-     #:declare mutable-hash (expr/c #'mutable/c)
-     (set!-pack #'([(hash) hash-expr.c]
-                   [(key) key-expr]
-                   (~? [(failure) failure-expr.c]))
-                #'(obj)
-                #'(hash-ref hash key (~? failure))
-                #'(hash-set! mutable-hash.c key obj))]))
+(define-set!-parser hash-ref
+  [(_:id hash-expr key-expr:expr (~optional failure-expr))
+   #:declare hash-expr (expr/c #'hash?)
+   #:declare failure-expr (expr/c #'failure-result/c)
+   #:attr failure (and (datum failure-expr) #'failure)
+   #:with mutable-hash (syntax/loc #'hash-expr hash)
+   #:declare mutable-hash (expr/c #'mutable/c)
+   (set!-pack #'([(hash) hash-expr.c]
+                 [(key) key-expr]
+                 (~? [(failure) failure-expr.c]))
+              #'(obj)
+              #'(hash-ref hash key (~? failure))
+              #'(hash-set! mutable-hash.c key obj))])
 
 (begin-for-syntax
   (define-splicing-syntax-class obj?
@@ -94,7 +107,6 @@
   [(_:id vector:id opt:opt)
    #:do [(define (vector-id fmt-str [ctx #'vector])
            (format-id ctx fmt-str #'vector #:source #'vector))]
-   #:with %name (vector-id "%~a-ref")
    #:with name (vector-id "~a-ref")
    #:with vector-expr (vector-id "~a-expr" #'here)
    #:with vector-expr.c (vector-id "~a-expr.c" #'here)
@@ -122,33 +134,32 @@
           (define (check-obj obj)
             (unless (opt.obj? obj)
               (raise-argument-error 'name opt.obj?-str obj)))))
-   #:with accessor-def
+   #:with expander-def
    (syntax/loc this-syntax
-     (define-accessor %name name
-       (syntax-parser
-         [(_:id vector-expr pos-expr)
-          #:declare vector-expr (expr/c #'vector/c)
-          #:declare pos-expr (expr/c #'exact-nonnegative-integer?)
-          #:with mutable-vector (syntax/loc #'vector-expr vector)
-          #:declare mutable-vector (expr/c #'mutable/c)
-          (set!-pack #'([(vector pos)
-                         (if (variable-reference-from-unsafe?
-                              (#%variable-reference))
-                             (values vector-expr pos-expr)
-                             (let ([vector vector-expr.c]
-                                   [pos pos-expr.c])
-                               (check-vector+pos vector pos)
-                               (values vector pos)))])
-                     #'(obj)
-                     #'(vector-ref vector pos)
-                     #'(if (variable-reference-from-unsafe?
+     (define-set!-parser name
+       [(_:id vector-expr pos-expr)
+        #:declare vector-expr (expr/c #'vector/c)
+        #:declare pos-expr (expr/c #'exact-nonnegative-integer?)
+        #:with mutable-vector (syntax/loc #'vector-expr vector)
+        #:declare mutable-vector (expr/c #'mutable/c)
+        (set!-pack #'([(vector pos)
+                       (if (variable-reference-from-unsafe?
                             (#%variable-reference))
-                           (vector-set! mutable-vector pos obj)
-                           (vector-set! mutable-vector.c pos
-                                        (begin
-                                          (~? (check-obj obj))
-                                          obj))))])))
-   #'(begin check-vector+pos-def (~? check-obj-def) accessor-def)])
+                           (values vector-expr pos-expr)
+                           (let ([vector vector-expr.c]
+                                 [pos pos-expr.c])
+                             (check-vector+pos vector pos)
+                             (values vector pos)))])
+                   #'(obj)
+                   #'(vector-ref vector pos)
+                   #'(if (variable-reference-from-unsafe?
+                          (#%variable-reference))
+                         (vector-set! mutable-vector pos obj)
+                         (vector-set! mutable-vector.c pos
+                                      (begin
+                                        (~? (check-obj obj))
+                                        obj))))]))
+   #'(begin check-vector+pos-def (~? check-obj-def) expander-def)])
 
 (define-vector-ref bytes #:type "byte string" #:obj? byte?)
 
@@ -171,10 +182,10 @@
      (set!-pack #'([(box) box-expr.c]) #'(obj)
                 #'(unbox box) #'(set-box! mutable-box.c obj))]))
 
-(define-accessor %unbox unbox
+(define-set!-expander unbox
   (make-unbox #'unsafe-unbox #'unsafe-set-box! #'box?))
 
 (define box*/c (and/c box? (not/c impersonator?)))
 
-(define-accessor %unbox* unbox*
+(define-set!-expander unbox*
   (make-unbox #'unsafe-unbox* #'unsafe-set-box*! #'box*/c))

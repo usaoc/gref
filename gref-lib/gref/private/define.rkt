@@ -15,27 +15,39 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide define-accessor)
+(provide define-set!-syntax define-set!-syntaxes)
 
 (require syntax/parse/define
-         (for-syntax gref/private/property
+         (for-syntax gref/private/space
                      racket/base
-                     racket/contract/base
-                     syntax/parse
-                     syntax/transformer))
-
-(define-for-syntax transformer/c (-> syntax? syntax?))
+                     syntax/datum
+                     syntax/parse/lib/function-header))
 
 (begin-for-syntax
-  (struct accessor (expr set!)
-    #:property prop:procedure (struct-field-index expr)
-    #:property prop:set!-transformer (struct-field-index expr)
-    #:property prop:set!-expander (lambda (acc) (accessor-set! acc))))
+  (define-syntax-class header
+    #:description "definition header"
+    #:commit
+    #:attributes (name make-fn)
+    (pattern (name:id formal:formal)
+      #:attr make-fn
+      (lambda (body-stxs)
+        (define/syntax-parse (body ...) body-stxs)
+        #'(lambda formal body ...)))
+    (pattern (inner:header formal:formal)
+      #:attr make-fn
+      (lambda (body-stxs)
+        (define/syntax-parse (body ...) body-stxs)
+        ((datum inner.make-fn) (list #'(lambda formal body ...))))
+      #:with name #'inner.name)))
 
-(define-syntax-parser define-accessor
-  [(_:id name:id expr:id set!)
-   #:declare set! (expr/c #'transformer/c
-                          #:phase (add1 (syntax-local-phase-level)))
-   (syntax/loc this-syntax
-     (define-syntax name
-       (accessor (make-variable-like-transformer #'expr) set!.c)))])
+(define-syntax-parser define-set!-syntax
+  [(_:id name:id val:expr)
+   (syntax/loc this-syntax (define-set!-syntaxes (name) val))]
+  [(_:id header:header body:expr ...+)
+   #:with fn ((datum header.make-fn) (datum (body ...)))
+   (syntax/loc this-syntax (define-set!-syntaxes (header.name) fn))])
+
+(define-syntax-parser define-set!-syntaxes
+  [(_:id (name:id ...) vals:expr)
+   #:with (set!-name ...) (map in-set!-space (datum (name ...)))
+   (syntax/loc this-syntax (define-syntaxes (set!-name ...) vals))])

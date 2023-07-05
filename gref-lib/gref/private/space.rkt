@@ -15,7 +15,8 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(require gref/private/expander
-         gref/private/modify)
-(provide (all-from-out gref/private/expander)
-         (all-from-out gref/private/modify))
+(provide in-set!-space)
+
+(define set!-intro (make-interned-syntax-introducer 'gref/set!))
+
+(define (in-set!-space stx) (set!-intro stx 'add))

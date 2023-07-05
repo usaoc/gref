@@ -32,22 +32,30 @@
 (define expect-expand-contract-exn
   (expect-expand (expect-raise (expect-struct exn:fail:contract))))
 
-(test-case "define-accessor"
-  (check-expect (let ([val 'init])
-                  (define (val-ref) val)
-                  (define pre (shift! (foo) 'ignored))
-                  (define post (foo))
-                  (define-accessor foo val-ref
-                    (syntax-parser
-                      [(_:id)
-                       (set!-pack #'() #'(_obj)
-                                  #'val #'(set! val 'set))]))
-                  (list pre post))
-                '(init set))
-  (check-expect #'(let ()
-                    (define-accessor foo bar 'not-id)
-                    'unreached)
-                expect-expand-contract-exn))
+(test-case "define-set!-syntax"
+  (check-expect (let ()
+                  (define-syntax foo 'default)
+                  (define-set!-syntax foo 'set!)
+                  (define-syntax-parser bar
+                    [_:id
+                     #:with val (syntax-local-value #'foo)
+                     (syntax/loc this-syntax 'val)])
+                  bar)
+                'default))
+
+(test-case "define-set!-syntaxes"
+  (check-expect (let ()
+                  (define-syntaxes (foo bar)
+                    (values 'default 'default))
+                  (define-set!-syntaxes (foo bar)
+                    (values 'set! 'set!))
+                  (define-syntax-parser baz
+                    [_:id
+                     #:with val-foo (syntax-local-value #'foo)
+                     #:with val-bar (syntax-local-value #'bar)
+                     (syntax/loc this-syntax '(val-foo val-bar))])
+                  baz)
+                '(default default)))
 
 (test-case "set!-pack"
   (check-exn exn:fail:contract?
@@ -69,7 +77,7 @@
 (test-case "prop:set!-expander"
   (check-expect (let ([val 'init])
                   (set! bar 'ignored)
-                  (define-syntax bar
+                  (define-set!-syntax bar
                     (let ()
                       (define (expand _foo)
                         (syntax-parser
@@ -84,7 +92,7 @@
                 'set)
   (check-expect #'(let ()
                     (set! bar 'ignored)
-                    (define-syntax bar
+                    (define-set!-syntax bar
                       (let ()
                         (define ((expand _foo) _stx) 'not-stx)
                         (struct foo ()
@@ -93,30 +101,51 @@
                     'unreached)
                 expect-expand-contract-exn))
 
+(test-case "make-set!-expander"
+  (check-expect (let ([val 'init])
+                  (set! foo 'ignored)
+                  (define-set!-syntax foo
+                    (make-set!-expander
+                     (syntax-parser
+                       [(_:id)
+                        (set!-pack #'() #'(_obj)
+                                   #'val #'(set! val 'set))]
+                       [who:id (syntax/loc this-syntax (who))])))
+                  val)
+                'set)
+  (check-expect #'(let ()
+                    (set! foo 'ignored)
+                    (define-set!-syntax foo
+                      (make-set!-expander (lambda (_stx) 'not-stx)))
+                    'unreached)
+                expect-expand-contract-exn))
+
 (test-case "gref"
   (check-expect (let ()
-                  (define-accessor foo bar
-                    (syntax-parser
-                      [(_:id)
-                       (set!-pack #'([(id) expr]) #'()
-                                  #'reader #'writer)]))
-                  (define-syntax-parser baz
+                  (define-set!-syntax foo
+                    (make-set!-expander
+                     (syntax-parser
+                       [_:id
+                        (set!-pack #'([(id) expr]) #'()
+                                   #'reader #'writer)])))
+                  (define-syntax-parser bar
                     [(_:id (~var ref (gref 0)))
                      (syntax/loc this-syntax
                        '((ref.binding ...)
                          (ref.store ...)
                          ref.reader
                          ref.writer))])
-                  (baz (foo)))
+                  (bar foo))
                 '(([(id) expr]) () reader writer))
   (check-expect #'(let ()
-                    (baz (foo))
-                    (define-accessor foo bar
-                      (syntax-parser
-                        [(_:id)
-                         (set!-pack #'([(id) expr]) #'()
-                                    #'reader #'writer)]))
-                    (define-syntax-parser baz
+                    (bar foo)
+                    (define-set!-syntax foo
+                      (make-set!-expander
+                       (syntax-parser
+                         [_:id
+                          (set!-pack #'([(id) expr]) #'()
+                                     #'reader #'writer)])))
+                    (define-syntax-parser bar
                       [(_:id _:gref) #''no-exn])
                     'unreached)
                 expect-expand-syntax-exn))
@@ -127,18 +156,19 @@
 
 (test-case "get-set!-expansion"
   (check-expect (let ()
-                  (define-accessor foo bar
-                    (syntax-parser
-                      [(_:id)
-                       (set!-pack #'([(id) expr]) #'()
-                                  #'reader #'writer)]))
-                  (define-syntax-parser baz
+                  (define-set!-syntax foo
+                    (make-set!-expander
+                     (syntax-parser
+                       [_:id
+                        (set!-pack #'([(id) expr]) #'()
+                                   #'reader #'writer)])))
+                  (define-syntax-parser bar
                     [(_:id ref)
                      (define-values (bindings stores reader writer)
                        (get-set!-expansion #'ref 0))
                      (quasisyntax/loc this-syntax
                        '(#,bindings #,stores #,reader #,writer))])
-                  (baz (foo)))
+                  (bar foo))
                 '(([(id) expr]) () reader writer))
   (check-expect #'(let ()
                     (define-syntax (foo _stx)

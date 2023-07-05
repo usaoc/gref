@@ -16,16 +16,15 @@
  along with this program.  If not, see
  <https://www.gnu.org/licenses/>.}
 
-@(require racket/require)
 @(require scribblings/gref/bib
+          scribblings/gref/def
           scribblings/gref/example
           scribblings/gref/lib
           scribblings/gref/tech
           (for-label gref/base
                      racket/contract/base
-                     (except-in syntax/parse integer)
-                     (subtract-in (except-in racket/base ...)
-                                  gref/base)))
+                     (except-in racket/base ... set! set!-values)
+                     (except-in syntax/parse integer)))
 
 @title[#:tag "introduction"]{Introduction}
 
@@ -137,9 +136,13 @@ generally be @void-const following Racket's convention (see
                  (printing-box (printing-box #hasheq((foo . "bar"))
                                              #:name 'inner)
                                #:name 'outer))
-               (call! hash-update
-                      (unbox (unbox box-of-box)) 'foo
-                      (compose1 string->symbol string-upcase))
+               (eval:alts
+                (call! hash-update
+                       (#,(racket/set! unbox) (unbox box-of-box)) 'foo
+                       (compose1 string->symbol string-upcase))
+                (call! hash-update
+                       (unbox (unbox box-of-box)) 'foo
+                       (compose1 string->symbol string-upcase)))
                (unbox (unbox box-of-box))]
 
 Before the @tech/rep{accesses} are performed, the outer

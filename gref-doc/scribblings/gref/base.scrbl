@@ -23,7 +23,7 @@
 
 @defmodule[gref/base #:no-declare]
 @declare-exporting[gref/base gref]
-The base module @racket[provide]s predefined @tech{accessors} and
-@tech{modify macros}.
+The base module @racket[provide]s predefined
+@tech{@racket[set!] expanders} and @tech{modify macros}.
 
-@include/gref[acc modify]
+@include/gref[expander modify]
