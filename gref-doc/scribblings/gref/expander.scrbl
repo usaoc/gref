@@ -36,8 +36,8 @@ results.  When an inapproapriate result is detected, the
 
 @nested[#:style 'inset
         @defset![#:link-target? #f
-                 (set! form val)
-                 #:contracts ([val any])]]
+                 (set! form vals)
+                 #:contracts ([vals any])]]
 
 indicates that @racket[form] is in a @deftech{@racket[set!] context},
 where the @tech{@racket[set!] expander} is invoked and produces a
@@ -50,9 +50,9 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
 @tech[#:doc rkt-ref]{default binding space} as provided by
 @racketmodname[racket/base].
 
-@defset![(set! (values ref ...) val)
+@defset![(set! (values ref ...) vals)
          #:grammar [(ref @#,racket[gref])]
-         #:contracts ([val any])]{
+         #:contracts ([vals any])]{
  Combines @racket[ref]s into a @tech/rep{reference} that @tech{stores}
  as many @tech{values} as there are @racket[ref]s.  Correspondingly,
  the @tech/rep{context} combines all @tech/rep{contexts}, the

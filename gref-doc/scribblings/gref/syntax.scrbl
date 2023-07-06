@@ -51,9 +51,9 @@ extensions.
                     [#:source src source-location? #f])
          syntax?
          provided-for-syntax]{
- Returns a @deftech{fully-expanded} @racket[_number]-@tech/rep{valued}
- @tech/rep{reference}, where @racket[_number] is decided by the number
- of @racket[id]s in @racket[stores].  The resulting
+ Returns a @deftech{fully-expanded} @var[number]-@tech/rep{valued}
+ @tech/rep{reference}, where @var[number] is decided by the number of
+ @racket[id]s in @racket[stores].  The resulting
  @tech[#:doc rkt-ref]{syntax object} is given the
  @tech[#:doc rkt-ref]{source-location} information of @racket[src].
  The arguments are respectively the @tech{lexical context},
@@ -71,8 +71,8 @@ extensions.
  @racket[prop:set!-expander] and results in a
  @tech{@racket[set!] expander}, which in turn takes the
  @tech[#:doc rkt-ref]{syntax object} of a
- @racket[_number]-@tech/rep{valued} @tech/rep{reference} and results
- in another @racket[_number]-@tech/rep{valued} @tech/rep{reference}.}
+ @var[number]-@tech/rep{valued} @tech/rep{reference} and results in
+ another @var[number]-@tech/rep{valued} @tech/rep{reference}.}
 
 @defproc[(set!-expander? [val any/c]) boolean?
          provided-for-syntax]{
@@ -114,8 +114,8 @@ extensions.
    @tech[#:doc rkt-ref]{variables} is used to continue.}]
 
  Each @tech[#:doc rkt-guide]{transformer binding} is resolved in the
- @racket['gref/set!] @tech[#:doc rkt-ref]{binding space}.  Due to the
- way @tech[#:doc rkt-ref]{scope sets} works, a
+ @indexed-racket['gref/set!] @tech[#:doc rkt-ref]{binding space}.  Due
+ to the way @tech[#:doc rkt-ref]{scope sets} works, a
  @tech[#:doc rkt-guide]{transformer binding} in the
  @tech[#:doc rkt-ref]{default binding space} will be used
  unless another @tech[#:doc rkt-guide]{transformer binding} in the
@@ -139,8 +139,7 @@ extensions.
                   @defattr[reader syntax?]
                   @defattr[writer syntax?]]]{
   The @tech{lexical context}, @tech{store variables},
-  @tech{reader expression}, and @tech{writer expression}
-  respectively.}
+  @tech{reader expression}, and @tech{writer expression}.}
 
  If @racket[syntax-transforming?] returns @racket[#f], the matching
  fails and no @tech/rep{expansion} is done.}

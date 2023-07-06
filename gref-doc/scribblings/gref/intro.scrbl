@@ -78,9 +78,10 @@ Unfortunately, this approach suffers from the fact that the
 @tech/rep{setter} must be dynamically resolved.  Instead, Gref has
 adopted a full-blown @tech[#:doc rkt-ref]{macro} approach similar to
 that of Lisp Machine Lisp, which allows for static resolution and
-more.  In Gref, a @deftech{generalized reference} corresponding to
-some @tech{locations} where some @tech{values} are
-@deftech/rep{stored} consists of four items:
+more.  In Gref, a @tech{fully-expanded}
+@deftech{generalized reference} corresponding to some @tech{locations}
+where some @tech{values} are @deftech/rep{stored} consists of four
+items:
 
 @itemlist[
  #:style 'ordered
@@ -119,7 +120,7 @@ results of the @tech/rep{writer} are unspecified, but they should
 generally be @void-const following Racket's convention (see
 @secref[#:doc rkt-guide "void+undefined"]).
 
-@examples/gref[#:label @elem{
+@examples/gref[#:label @list{
                 As an example, consider the @tech{modify macro}
                 @racket[call!]:}
                (define (printing-box val #:name name)

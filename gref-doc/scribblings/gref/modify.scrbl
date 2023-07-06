@@ -35,23 +35,23 @@ procedures.  Unless otherwise stated, the result of a modify macro
 is always @|void-const|.
 
 @defform[(set! pair ...)
-         #:grammar [(pair (code:line ref val))
+         #:grammar [(pair (code:line ref vals))
                     (ref @#,racket[(gref #:arity #f)])]
-         #:contracts ([val any])]{
- @tech{Stores} the results of @racket[val]s to @racket[ref]s
+         #:contracts ([vals any])]{
+ @tech{Stores} the results of @racket[vals]s to @racket[ref]s
  @deftech{sequentially} in the apparent @tech/rep{order}.}
 
 @defform[(set!-values pair ...)
-         #:grammar [(pair (code:line (ref ...) val))
+         #:grammar [(pair (code:line (ref ...) vals))
                     (ref @#,racket[gref])]
-         #:contracts ([val any])]{
+         #:contracts ([vals any])]{
  Like @racket[set!], but constrained to multiple @racket[gref]s.}
 
 @defform[(pset! pair ...)
-         #:grammar [(pair (code:line ref val))
+         #:grammar [(pair (code:line ref vals))
                     (ref @#,racket[(gref #:arity #f)])]
-         #:contracts ([val any])]{
- Like @racket[set!], but evaluates all @racket[val]s
+         #:contracts ([vals any])]{
+ Like @racket[set!], but evaluates all @racket[vals]s
  @deftech{parallelly} before @tech/rep{storing} to @racket[ref]s in an
  unspecified @tech/rep{order}.
 
@@ -71,17 +71,17 @@ is always @|void-const|.
                 bar]}
 
 @defform[(pset!-values pair ...)
-         #:grammar [(pair (code:line (ref ...) val))
+         #:grammar [(pair (code:line (ref ...) vals))
                     (ref @#,racket[gref])]
-         #:contracts ([val any])]{
+         #:contracts ([vals any])]{
  Like @racket[pset!], but constrained to multiple @racket[gref]s.}
 
-@defform[(shift! ref ... val)
+@defform[(shift! ref ... vals)
          #:grammar [(ref @#,racket[(gref #:arity _number)])]
-         #:contracts ([val any])]{
+         #:contracts ([vals any])]{
  @tech{Stores} the @tech{values} @tech/rep{stored} in the @math{n+1}th
  @racket[ref] to the @math{n}th @racket[ref] @tech{parallelly}, then
- @tech{stores} the results of @racket[val] to the last @racket[ref].
+ @tech{stores} the results of @racket[vals] to the last @racket[ref].
  Returns the @tech{values} originally @tech/rep{stored} in the first
  @racket[ref].  The first @racket[ref] determines the @var[number].
 
