@@ -129,7 +129,7 @@
                         (set!-pack #'([(id) expr]) #'()
                                    #'reader #'writer)])))
                   (define-syntax-parser bar
-                    [(_:id (~var ref (gref 0)))
+                    [(_:id (~var ref (gref #:arity 0)))
                      (syntax/loc this-syntax
                        '((ref.binding ...)
                          (ref.store ...)
@@ -165,7 +165,7 @@
                   (define-syntax-parser bar
                     [(_:id ref)
                      (define-values (bindings stores reader writer)
-                       (get-set!-expansion #'ref 0))
+                       (get-set!-expansion #'ref #:arity 0))
                      (quasisyntax/loc this-syntax
                        '(#,bindings #,stores #,reader #,writer))])
                   (bar foo))

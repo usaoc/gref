@@ -24,7 +24,7 @@
   (define num/c (or/c #f exact-nonnegative-integer?))
   (provide (contract-out
              [get-set!-expansion
-              (->* (syntax?) (num/c)
+              (->* (syntax?) (#:arity num/c)
                    #:pre/desc (or (syntax-transforming?)
                                   "not currently expanding")
                    (values (listof syntax?) (listof identifier?)
@@ -38,7 +38,8 @@
                (-> set!-expander? (-> syntax? syntax?)))]
              [make-set!-expander
               (-> (-> syntax? syntax?) set!-expander?)]))
-  (provide-syntax-class/contract [gref (syntax-class/c (num/c))]))
+  (provide-syntax-class/contract
+    [gref (syntax-class/c () (#:arity num/c))]))
 
 (require gref/private/define
          (for-syntax (only-in gref/private/property set!-expander?)

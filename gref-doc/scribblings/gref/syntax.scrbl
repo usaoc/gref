@@ -86,7 +86,8 @@ extensions.
  @racket[proc] as the @tech{@racket[set!] expander}.}
 
 @defcls/alias[gref generalized-reference
-              (_ [number (or/c #f exact-nonnegative-integer?) 1])
+              (_ [#:arity number
+                  (or/c #f exact-nonnegative-integer?) 1])
               #:both provided-for-syntax]{
  Matches a @racket[number]-@tech/rep{valued} @tech/rep{reference}.  If
  @racket[number] is @racket[#f], matches any @tech/rep{reference}.
@@ -139,13 +140,13 @@ extensions.
 
 @defproc[(get-set!-expansion
           [ref-stx syntax?]
-          [number (or/c #f exact-nonnegative-integer?) 1])
+          [#:arity number (or/c #f exact-nonnegative-integer?) 1])
          (values (listof syntax?) (listof identifier?)
                  syntax? syntax?)
          provided-for-syntax]{
  The procedural interface for @racket[gref].  @tech/rep{Expands}
- @racket[ref-stx] as a @racket[(gref number)] form and returns the
- bound @tech[#:doc stx-parse]{syntax-valued attributes} in the
+ @racket[ref-stx] as a @racket[(gref #:arity number)] form and returns
+ the bound @tech[#:doc stx-parse]{syntax-valued attributes} in the
  documented order.
 
  If @racket[syntax-transforming?] returns @racket[#f], the

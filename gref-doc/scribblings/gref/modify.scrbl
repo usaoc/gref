@@ -36,7 +36,7 @@ is always @|void-const|.
 
 @defform[(set! pair ...)
          #:grammar [(pair (code:line ref val))
-                    (ref @#,racket[(gref #f)])]
+                    (ref @#,racket[(gref #:arity #f)])]
          #:contracts ([val any])]{
  @tech{Stores} the results of @racket[val]s to @racket[ref]s
  @deftech{sequentially} in the apparent @tech/rep{order}.}
@@ -49,7 +49,7 @@ is always @|void-const|.
 
 @defform[(pset! pair ...)
          #:grammar [(pair (code:line ref val))
-                    (ref @#,racket[(gref #f)])]
+                    (ref @#,racket[(gref #:arity #f)])]
          #:contracts ([val any])]{
  Like @racket[set!], but evaluates all @racket[val]s
  @deftech{parallelly} before @tech/rep{storing} to @racket[ref]s in an
@@ -77,7 +77,7 @@ is always @|void-const|.
  Like @racket[pset!], but constrained to multiple @racket[gref]s.}
 
 @defform[(shift! ref ... val)
-         #:grammar [(ref @#,racket[(gref _number)])]
+         #:grammar [(ref @#,racket[(gref #:arity _number)])]
          #:contracts ([val any])]{
  @tech{Stores} the @tech{values} @tech/rep{stored} in the @math{n+1}th
  @racket[ref] to the @math{n}th @racket[ref] @tech{parallelly}, then
@@ -92,7 +92,7 @@ is always @|void-const|.
                 bar]}
 
 @defform[(rotate! ref ...+)
-         #:grammar [(ref @#,racket[(gref _number)])]]{
+         #:grammar [(ref @#,racket[(gref #:arity _number)])]]{
  @tech{Stores} the @tech{values} @tech/rep{stored} in the @math{n+1}th
  @racket[ref] to the @math{n}th @racket[ref] @tech{parallelly}, then
  @tech{stores} the @tech{values} originally @tech/rep{stored} in the

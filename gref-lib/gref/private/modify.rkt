@@ -67,7 +67,7 @@
   (define-splicing-syntax-class set!-pair
     #:description "set! assignment pair"
     #:attributes (val [binding 1] [store 1] writer)
-    (pattern (~seq (~var || (%gref #f)) val:expr))))
+    (pattern (~seq (~var || (%gref #:arity #f)) val:expr))))
 
 (define-modify-parser set!
   [(_:id) (syntax/loc this-syntax (void))]

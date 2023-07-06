@@ -106,10 +106,11 @@ identifier with transformer binding (possibly in gref/set! space)"
                        (~do (define val (syntax-e this-syntax)))
                        (~fail #:unless (set!-packed? val)) ~!
                        (~var || (set!-packed-form val track intro)))
-                 (~parse (~var || (%gref num desc))
+                 (~parse (~var || (%gref #:arity num #:desc desc))
                          (track (intro this-syntax))))))
 
-(define-syntax-class (%gref [num 1] [desc (make-gref-desc num)]
+(define-syntax-class (%gref #:arity [num 1]
+                            #:desc [desc (make-gref-desc num)]
                             #:show [show desc])
   #:description show
   #:commit
@@ -144,7 +145,7 @@ identifier with transformer binding (possibly in gref/set! space)"
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
   (pattern ((~do (define desc (make-gref-desc 1)))
-            (~var ref (%gref 1 desc)) ...)
+            (~var ref (%gref #:arity 1 #:desc desc)) ...)
     #:cut
     #:with (binding ...) (datum (ref.binding ... ...))
     #:with (store ...) (datum (ref.store ... ...))
@@ -155,10 +156,10 @@ identifier with transformer binding (possibly in gref/set! space)"
   #:description "same-valued generalized references"
   #:commit
   #:attributes ([binding 2] [store 2] [reader 1] [writer 1] reader0)
-  (pattern ((~var ref0 (%gref #f))
+  (pattern ((~var ref0 (%gref #:arity #f))
             (~do (define num (length (datum (ref0.store ...))))
                  (define desc (make-gref-desc num)))
-            (~var ref (%gref num desc)) ...)
+            (~var ref (%gref #:arity num #:desc desc)) ...)
     #:with ((binding ...) ...)
     (datum ((ref0.binding ...) (ref.binding ...) ...))
     #:with ((store ...) ...)
@@ -167,7 +168,8 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:with (writer ...) (datum (ref0.writer ref.writer ...))
     #:with reader0 (datum ref0.reader)))
 
-(define-syntax-class (gref [num 1] [desc (make-gref-desc num)])
+(define-syntax-class (gref #:arity [num 1]
+                           #:desc [desc (make-gref-desc num)])
   #:description desc
   #:commit
   #:attributes ([binding 1] [store 1] reader writer)
@@ -175,12 +177,13 @@ identifier with transformer binding (possibly in gref/set! space)"
                        (~fail #:when (syntax-transforming?)) ~!
                        (~fail "\
 not within the dynamic extent of a macro transformation"))
-                 (~var || (%gref num desc #:show #f)))))
+                 (~var || (%gref #:arity num #:desc desc
+                                 #:show #f)))))
 
-(define (get-set!-expansion ref-stx [num 1])
+(define (get-set!-expansion ref-stx #:arity [num 1])
   (syntax-parse ref-stx
     #:context 'get-set!-expansion
     [ref
-     #:declare ref (%gref num)
+     #:declare ref (%gref #:arity num)
      (values (datum (ref.binding ...)) (datum (ref.store ...))
              (datum ref.reader) (datum ref.writer))]))
