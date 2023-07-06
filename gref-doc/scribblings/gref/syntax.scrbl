@@ -85,9 +85,16 @@ extensions.
  Returns an implementation of @racket[prop:set!-expander] that uses
  @racket[proc] as the @tech{@racket[set!] expander}.}
 
+@defthing[maybe-arity/c flat-contract?
+          provided-for-syntax]{
+ A @tech[#:doc rkt-ref]{flat contract} that accepts an expected
+ number of @tech{values}, where @racket[#f] means any number of
+ @tech{values}.
+
+ Equivalent to @racket[(or/c #f exact-nonnegative-integer?)].}
+
 @defcls/alias[gref generalized-reference
-              (_ [#:arity number
-                  (or/c #f exact-nonnegative-integer?) 1])
+              (_ [#:arity number maybe-arity/c 1])
               #:both provided-for-syntax]{
  Matches a @racket[number]-@tech/rep{valued} @tech/rep{reference}.  If
  @racket[number] is @racket[#f], matches any @tech/rep{reference}.
@@ -138,9 +145,8 @@ extensions.
  If @racket[syntax-transforming?] returns @racket[#f], the matching
  fails and no @tech/rep{expansion} is done.}
 
-@defproc[(get-set!-expansion
-          [ref-stx syntax?]
-          [#:arity number (or/c #f exact-nonnegative-integer?) 1])
+@defproc[(get-set!-expansion [ref-stx syntax?]
+                             [#:arity number maybe-arity/c 1])
          (values (listof syntax?) (listof identifier?)
                  syntax? syntax?)
          provided-for-syntax]{

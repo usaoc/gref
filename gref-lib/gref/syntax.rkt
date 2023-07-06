@@ -21,10 +21,11 @@
            racket/contract
            syntax/parse/experimental/provide
            syntax/srcloc)
-  (define num/c (or/c #f exact-nonnegative-integer?))
-  (provide (contract-out
+  (define maybe-arity/c (or/c #f exact-nonnegative-integer?))
+  (provide maybe-arity/c
+           (contract-out
              [get-set!-expansion
-              (->* (syntax?) (#:arity num/c)
+              (->* (syntax?) (#:arity maybe-arity/c)
                    #:pre/desc (or (syntax-transforming?)
                                   "not currently expanding")
                    (values (listof syntax?) (listof identifier?)
@@ -39,7 +40,7 @@
              [make-set!-expander
               (-> (-> syntax? syntax?) set!-expander?)]))
   (provide-syntax-class/contract
-    [gref (syntax-class/c () (#:arity num/c))]))
+    [gref (syntax-class/c () (#:arity maybe-arity/c))]))
 
 (require gref/private/define
          (for-syntax (only-in gref/private/property set!-expander?)
