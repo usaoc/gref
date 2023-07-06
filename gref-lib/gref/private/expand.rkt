@@ -21,6 +21,7 @@
 (require gref/private/property
          gref/private/space
          racket/match
+         racket/syntax
          syntax/datum
          syntax/parse
          (for-syntax racket/base)
@@ -40,7 +41,7 @@
 
 (define (make-mismatch desc given)
   (string-append-immutable
-   "number of values mismatch
+   "arity number mismatch
   expected: " desc "\n  given: " (make-gref-desc given)))
 
 (define (make-illegal val)
@@ -77,44 +78,44 @@ identifier with transformer binding (possibly in gref/set! space)"
   #:attributes ()
   (pattern [(_:id ...) _:expr]))
 
-(struct set!-packed (bindings stores reader writer))
+(struct set!-packed (num getter setter preambles))
 
-(define (set!-pack bindings stores reader writer #:source [src #f])
-  (datum->syntax #f (set!-packed bindings stores reader writer) src))
+(define (set!-pack getter setter #:arity [num 1] #:source [src #f]
+                   . preambles)
+  (datum->syntax #f (set!-packed num getter setter preambles) src))
 
-(define-syntax-class (set!-packed-form val track intro)
+(define-syntax-class (set!-packed-form val track+intro)
   #:description "set!-packed form"
   #:commit
-  #:attributes ([binding 1] [store 1] reader writer)
+  #:attributes (arity getter setter [preamble 1])
   (pattern _
-    #:do [(match-define (set!-packed bindings stores reader writer)
+    #:do [(match-define (set!-packed num getter setter preambles)
             val)]
-    #:with (~describe "lexical context" (_:binding ...)) bindings
-    #:with (~describe "store variables" (_:id ...)) stores
-    #:with (~describe "reader expression" _:expr) reader
-    #:with (~describe "writer expression" _:expr) writer
-    #:with (binding ...) (map track (syntax->list (intro bindings)))
-    #:with (store ...) (map track (syntax->list (intro stores)))
-    #:with reader (track (intro reader))
-    #:with writer (track (intro writer))))
+    #:with (~describe "getter procedure" _:expr) getter
+    #:with (~describe "setter procedure" _:expr) setter
+    #:with (~describe "preamble forms" (_:expr ...)) preambles
+    #:attr arity num
+    #:with getter (track+intro getter)
+    #:with setter (track+intro setter)
+    #:with (preamble ...) (map track+intro preambles)))
 
-(define-syntax-class (%gref-cont num desc track intro)
+(define-syntax-class (%gref-cont num desc track+intro)
   #:description #f
   #:commit
-  #:attributes ([binding 1] [store 1] reader writer)
+  #:attributes (arity getter setter [preamble 1])
   (pattern (~or* (~and _
                        (~do (define val (syntax-e this-syntax)))
                        (~fail #:unless (set!-packed? val)) ~!
-                       (~var || (set!-packed-form val track intro)))
+                       (~var || (set!-packed-form val track+intro)))
                  (~parse (~var || (%gref #:arity num #:desc desc))
-                         (track (intro this-syntax))))))
+                         (track+intro this-syntax)))))
 
 (define-syntax-class (%gref #:arity [num 1]
                             #:desc [desc (make-gref-desc num)]
                             #:show [show desc])
   #:description show
   #:commit
-  #:attributes ([binding 1] [store 1] reader writer)
+  #:attributes (arity getter setter [preamble 1])
   (pattern (~or* (ref:set!-trans . _) ref:set!-trans)
     #:cut
     #:do [(define id #'ref.id)
@@ -124,55 +125,56 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:do [(define proc (make-proc val))
           (define track (make-track this-syntax id))
           (define intro (make-syntax-introducer))
+          (define (track+intro stx) (track (intro stx)))
           (define use-intro (make-syntax-introducer #t))
           (define expanded
             (proc (use-intro (intro this-syntax 'add) 'add)))]
-    #:with (~var || (%gref-cont num desc track intro)) expanded
-    #:do [(define given (length (datum (store ...))))]
+    #:with (~var || (%gref-cont num desc track+intro)) expanded
+    #:do [(define given (datum arity))]
     #:fail-unless (check-num num given) (make-mismatch desc given))
   (pattern id:id
     #:cut
     #:fail-unless (check-num num 1) (make-mismatch desc 1)
-    #:with (binding ...) '()
+    #:attr arity 1
     #:do [(define track (make-track this-syntax #'id))]
-    #:with obj ((make-syntax-introducer) #'obj 'add)
-    #:with (store ...) (list (track #'obj))
-    #:with reader (track #'id)
-    #:with writer (track #'(set! id obj))))
+    #:with getter (track #'(lambda () id))
+    #:with setter (track #'(lambda (val) (set! id val)))
+    #:with (preamble ...) '()))
 
 (define-syntax-class %gref1s
   #:description "1-valued generalized references"
   #:commit
-  #:attributes ([binding 1] [store 1] reader writer)
+  #:attributes (arity getter setter [preamble 1])
   (pattern ((~do (define desc (make-gref-desc 1)))
             (~var ref (%gref #:arity 1 #:desc desc)) ...)
     #:cut
-    #:with (binding ...) (datum (ref.binding ... ...))
-    #:with (store ...) (datum (ref.store ... ...))
-    #:with reader #'(values ref.reader ...)
-    #:with writer #'(#%expression (begin ref.writer ... (void)))))
+    #:do [(define given (length (datum (ref ...))))]
+    #:attr arity given
+    #:with getter #'(lambda () (values (ref.getter) ...))
+    #:with (val ...) (for/list ([idx (in-range given)])
+                       (format-id #'here "val~a" idx #:source #'here))
+    #:with setter #'(lambda (val ...) (ref.setter val) ... (void))
+    #:with (preamble ...) (datum (ref.preamble ... ...))))
 
 (define-syntax-class %grefns
   #:description "same-valued generalized references"
   #:commit
-  #:attributes ([binding 2] [store 2] [reader 1] [writer 1] reader0)
+  #:attributes (getter0 [getter 1] [setter 1] [preamble 2])
   (pattern ((~var ref0 (%gref #:arity #f))
-            (~do (define num (length (datum (ref0.store ...))))
+            (~do (define num (datum ref0.arity))
                  (define desc (make-gref-desc num)))
             (~var ref (%gref #:arity num #:desc desc)) ...)
-    #:with ((binding ...) ...)
-    (datum ((ref0.binding ...) (ref.binding ...) ...))
-    #:with ((store ...) ...)
-    (datum ((ref0.store ...) (ref.store ...) ...))
-    #:with (reader ...) (datum (ref.reader ...))
-    #:with (writer ...) (datum (ref0.writer ref.writer ...))
-    #:with reader0 (datum ref0.reader)))
+    #:with (getter ...) (datum (ref.getter ...))
+    #:with getter0 (datum ref0.getter)
+    #:with (setter ...) (datum (ref0.setter ref.setter ...))
+    #:with ((preamble ...) ...)
+    (datum ((ref0.preamble ...) (ref.preamble ...) ...))))
 
 (define-syntax-class (gref #:arity [num 1]
                            #:desc [desc (make-gref-desc num)])
   #:description desc
   #:commit
-  #:attributes ([binding 1] [store 1] reader writer)
+  #:attributes (arity getter setter [preamble 1])
   (pattern (~or* (~and _
                        (~fail #:when (syntax-transforming?)) ~!
                        (~fail "\
@@ -185,5 +187,5 @@ not within the dynamic extent of a macro transformation"))
     #:context 'get-set!-expansion
     [ref
      #:declare ref (%gref #:arity num)
-     (values (datum (ref.binding ...)) (datum (ref.store ...))
-             (datum ref.reader) (datum ref.writer))]))
+     (values (datum ref.arity)
+             #'ref.getter #'ref.setter (datum (ref.preamble ...)))]))

@@ -28,11 +28,13 @@
               (->* (syntax?) (#:arity maybe-arity/c)
                    #:pre/desc (or (syntax-transforming?)
                                   "not currently expanding")
-                   (values (listof syntax?) (listof identifier?)
-                           syntax? syntax?))]
+                   (values exact-nonnegative-integer?
+                           syntax? syntax? (listof syntax?)))]
              [set!-pack
-              (->* (syntax? syntax? syntax? syntax?)
-                   (#:source source-location?)
+              (->* (syntax? syntax?)
+                   (#:arity exact-nonnegative-integer?
+                    #:source source-location?)
+                   #:rest (listof syntax?)
                    syntax?)]
              [prop:set!-expander
               (struct-type-property/c

@@ -46,19 +46,18 @@ extensions.
  Like @racket[define-syntaxes], but the created bindings are in the
  @racket['gref/set!] @tech[#:doc rkt-ref]{binding space}.}
 
-@defproc[(set!-pack [bindings syntax?] [stores syntax?]
-                    [reader syntax?] [writer syntax?]
+@defproc[(set!-pack [getter syntax?] [setter syntax?]
+                    [preamble syntax?] ...
+                    [#:arity number exact-nonnegative-integer? 1]
                     [#:source src source-location? #f])
          syntax?
          provided-for-syntax]{
- Returns a @deftech{fully-expanded} @var[number]-@tech/rep{valued}
- @tech/rep{reference}, where @var[number] is decided by the number of
- @racket[id]s in @racket[stores].  The resulting
- @tech[#:doc rkt-ref]{syntax object} is given the
- @tech[#:doc rkt-ref]{source-location} information of @racket[src].
- The arguments are respectively the @tech{lexical context},
- @tech{store variables}, @tech{reader expression}, and
- @tech{writer expression}.}
+ Returns a @deftech{fully-expanded} @racket[number]-@tech/rep{valued}
+ @tech/rep{reference}.  The first two by-position arguments are
+ the @tech{getter procedure} and @tech{setter procedure}, and the
+ remaining by-position arguments are the @tech{preamble forms}.  The
+ resulting @tech[#:doc rkt-ref]{syntax object} is given the
+ @tech[#:doc rkt-ref]{source-location} information of @racket[src].}
 
 @defthing[prop:set!-expander
           (struct-type-property/c
@@ -88,8 +87,7 @@ extensions.
 @defthing[maybe-arity/c flat-contract?
           provided-for-syntax]{
  A @tech[#:doc rkt-ref]{flat contract} that accepts an expected
- number of @tech{values}, where @racket[#f] means any number of
- @tech{values}.
+ @tech/rep{arity}, where @racket[#f] means any @tech/rep{arity}.
 
  Equivalent to @racket[(or/c #f exact-nonnegative-integer?)].}
 
@@ -132,27 +130,26 @@ extensions.
  @tech[#:doc rkt-ref]{syntax properties} are accoridingly manipulated.
 
  From the resulting @racket[set!-pack]ed form, the following
- @tech[#:doc stx-parse]{syntax-valued attributes} are bound:
+ @tech[#:doc stx-parse]{attributes} are bound:
 
- @defsubtogether[[@defattr[binding (listof syntax?)]
-                  @defattr[store (listof identifier?)]
-                  @defattr[reader syntax?]
-                  @defattr[writer syntax?]]]{
-  The @tech{lexical context}, @tech{store variables},
-  @tech{reader expression}, and @tech{writer expression}.}
+ @defsubtogether[[@defattr[arity exact-nonnegative-integer?]
+                  @defattr[getter syntax?]
+                  @defattr[setter syntax?]
+                  @defattr[preamble (listof syntax?)]]]{
+  The @tech{arity number}, @tech{getter procedure},
+  @tech{setter procedure}, and @tech{preamble forms}.}
 
  If @racket[syntax-transforming?] returns @racket[#f], the matching
  fails and no @tech/rep{expansion} is done.}
 
 @defproc[(get-set!-expansion [ref-stx syntax?]
                              [#:arity number maybe-arity/c 1])
-         (values (listof syntax?) (listof identifier?)
-                 syntax? syntax?)
+         (values exact-nonnegative-integer?
+                 syntax? syntax? (listof syntax?))
          provided-for-syntax]{
  The procedural interface for @racket[gref].  @tech/rep{Expands}
  @racket[ref-stx] as a @racket[(gref #:arity number)] form and returns
- the bound @tech[#:doc stx-parse]{syntax-valued attributes} in the
- documented order.
+ the bound @tech[#:doc stx-parse]{attributes} in the documented order.
 
  If @racket[syntax-transforming?] returns @racket[#f], the
  @racket[exn:fail:contract] exception is @racket[raise]d and no

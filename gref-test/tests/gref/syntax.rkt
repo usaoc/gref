@@ -58,21 +58,28 @@
                 '(default default)))
 
 (test-case "set!-pack"
+  (check-expect (set!-pack #'getter #'setter #'preamble1 #'preamble2)
+                (expect-pred syntax?))
   (check-exn exn:fail:contract?
     (lambda ()
-      (set!-pack 'not-stx #'bar #'baz #'quux)))
+      (set!-pack 'not-stx #'setter #'preamble1 #'preamble2)))
   (check-exn exn:fail:contract?
     (lambda ()
-      (set!-pack #'foo 'not-stx #'baz #'quux)))
+      (set!-pack #'getter 'not-stx #'preamble1 #'preamble2)))
   (check-exn exn:fail:contract?
     (lambda ()
-      (set!-pack #'foo #'bar 'not-stx #'quux)))
+      (set!-pack #'getter #'setter 'not-stx #'preamble2)))
   (check-exn exn:fail:contract?
     (lambda ()
-      (set!-pack #'foo #'bar #'baz 'not-stx)))
+      (set!-pack #'getter #'setter #'preamble1 'not-stx)))
   (check-exn exn:fail:contract?
     (lambda ()
-      (set!-pack #'foo #'bar #'baz #'quux #:source 'not-srcloc))))
+      (set!-pack #'getter #'setter #'preamble1 #'preamble2
+                 #:arity 'not-nonneg-int)))
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (set!-pack #'getter #'setter #'preamble1 #'preamble2
+                 #:source 'not-srcloc))))
 
 (test-case "prop:set!-expander"
   (check-expect (let ([val 'init])
@@ -81,9 +88,9 @@
                     (let ()
                       (define (expand _foo)
                         (syntax-parser
-                          [(_:id)
-                           (set!-pack #'() #'(_obj)
-                                      #'val #'(set! val 'set))]
+                          [(_:id) (set!-pack #'(lambda () val)
+                                             #'(lambda (_val)
+                                                 (set! val 'set)))]
                           [who:id (syntax/loc this-syntax (who))]))
                       (struct foo ()
                         #:property prop:set!-expander expand)
@@ -107,9 +114,9 @@
                   (define-set!-syntax foo
                     (make-set!-expander
                      (syntax-parser
-                       [(_:id)
-                        (set!-pack #'() #'(_obj)
-                                   #'val #'(set! val 'set))]
+                       [(_:id) (set!-pack #'(lambda () val)
+                                          #'(lambda (_val)
+                                              (set! val 'set)))]
                        [who:id (syntax/loc this-syntax (who))])))
                   val)
                 'set)
@@ -125,26 +132,23 @@
                   (define-set!-syntax foo
                     (make-set!-expander
                      (syntax-parser
-                       [_:id
-                        (set!-pack #'([(id) expr]) #'()
-                                   #'reader #'writer)])))
+                       [_:id (set!-pack #'getter #'setter
+                                        #'preamble1 #'preamble2
+                                        #:arity 0)])))
                   (define-syntax-parser bar
                     [(_:id (~var ref (gref #:arity 0)))
                      (syntax/loc this-syntax
-                       '((ref.binding ...)
-                         (ref.store ...)
-                         ref.reader
-                         ref.writer))])
+                       '(ref.getter ref.setter ref.preamble ...))])
                   (bar foo))
-                '(([(id) expr]) () reader writer))
+                '(getter setter preamble1 preamble2))
   (check-expect #'(let ()
                     (bar foo)
                     (define-set!-syntax foo
                       (make-set!-expander
                        (syntax-parser
-                         [_:id
-                          (set!-pack #'([(id) expr]) #'()
-                                     #'reader #'writer)])))
+                         [_:id (set!-pack #'getter #'setter
+                                          #'preamble1 #'preamble2
+                                          #:arity 0)])))
                     (define-syntax-parser bar
                       [(_:id _:gref) #''no-exn])
                     'unreached)
@@ -159,17 +163,17 @@
                   (define-set!-syntax foo
                     (make-set!-expander
                      (syntax-parser
-                       [_:id
-                        (set!-pack #'([(id) expr]) #'()
-                                   #'reader #'writer)])))
+                       [_:id (set!-pack #'getter #'setter
+                                        #'preamble1 #'preamble2
+                                        #:arity 0)])))
                   (define-syntax-parser bar
                     [(_:id ref)
-                     (define-values (bindings stores reader writer)
+                     (define-values (_arity getter setter preambles)
                        (get-set!-expansion #'ref #:arity 0))
                      (quasisyntax/loc this-syntax
-                       '(#,bindings #,stores #,reader #,writer))])
+                       '(#,getter #,setter #,@preambles))])
                   (bar foo))
-                '(([(id) expr]) () reader writer))
+                '(getter setter preamble1 preamble2))
   (check-expect #'(let ()
                     (define-syntax (foo _stx)
                       (get-set!-expansion 'not-stx)

@@ -66,7 +66,7 @@
 (begin-for-syntax
   (define-splicing-syntax-class set!-pair
     #:description "set! assignment pair"
-    #:attributes (val [binding 1] [store 1] writer)
+    #:attributes (val getter setter [preamble 1])
     (pattern (~seq (~var || (%gref #:arity #f)) val:expr))))
 
 (define-modify-parser set!
@@ -74,16 +74,17 @@
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
      (begin
-       (let-values (pair.binding ...)
-         (let-values ([(pair.store ...) pair.val])
-           (#%expression pair.writer)))
+       (let ()
+         pair.preamble ...
+         (call-with-values (lambda () (#%expression pair.val))
+           pair.setter))
        ...
        (void)))])
 
 (begin-for-syntax
   (define-splicing-syntax-class set!-values-pair
     #:description "set!-values assignment pair"
-    #:attributes (val [binding 1] [store 1] writer)
+    #:attributes (val getter setter [preamble 1])
     (pattern (~seq :%gref1s val:expr))))
 
 (define-modify-parser set!-values
@@ -91,50 +92,53 @@
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
      (begin
-       (let-values (pair.binding ...)
-         (let-values ([(pair.store ...) pair.val])
-           pair.writer))
+       (let ()
+         pair.preamble ...
+         (call-with-values (lambda () (#%expression pair.val))
+           pair.setter))
        ...))])
 
 (define-syntax-parser pset!-fold
   [(_ () () () ()) (syntax/loc this-syntax (void))]
-  [(_ ((binding0 ...) bindings ...) ((store0 ...) stores ...)
-      (writer0 writers ...) (val0 val ...))
+  [(_ (getter0 getter ...) (setter0 setter ...)
+      ((preamble0 ...) preambles ...) (val0 val ...))
    (syntax/loc this-syntax
-     (let-values (binding0 ...)
-       (let-values
-           ([(store0 ...)
-             (begin0 val0
-               (pset!-fold (bindings ...) (stores ...)
-                           (writers ...) (val ...)))])
-         writer0)))])
+     (let ()
+       preamble0 ...
+       (call-with-values (lambda ()
+                           (begin0 (#%expression val0)
+                             (pset!-fold (getter ...) (setter ...)
+                                         (preambles ...) (val ...))))
+         setter0)))])
 
 (define-modify-parser pset!
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
      (begin
-       (pset!-fold ((pair.binding ...) ...) ((pair.store ...) ...)
-                   ((#%expression pair.writer) ...) (pair.val ...))
+       (pset!-fold (pair.getter ...) (pair.setter ...)
+                   ((pair.preamble ...) ...) (pair.val ...))
        (void)))])
 
 (define-modify-parser pset!-values
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
-     (pset!-fold ((pair.binding ...) ...) ((pair.store ...) ...)
-                 (pair.writer ...) (pair.val ...)))])
+     (pset!-fold (pair.getter ...) (pair.setter ...)
+                 ((pair.preamble ...) ...) (pair.val ...)))])
 
 (define-syntax-parser shift!-fold
-  [(_ () () () () reader) (syntax/loc this-syntax reader)]
-  [(_ ((binding0 ...) bindings ...) ((store0 ...) stores ...)
-      (reader1 reader ...) (writer0 writer ...)
-      (~optional reader0))
+  [(_ () () () getter) (syntax/loc this-syntax (getter))]
+  [(_ (getter1 getter ...)
+      (setter0 setter ...)
+      ((preamble0 ...) preambles ...)
+      (~optional getter0))
    (syntax/loc this-syntax
-     (let-values (binding0 ...)
-       (let-values
-           ([(store0 ...)
-             (shift!-fold (bindings ...) (stores ...)
-                          (reader ...) (writer ...) reader1)])
-         (begin0 (~? reader0 (void)) writer0))))])
+     (let ()
+       preamble0 ...
+       (begin0 (~? (getter0) (void))
+         (call-with-values (lambda ()
+                             (shift!-fold (getter ...) (setter ...)
+                                          (preambles ...) getter1))
+           setter0))))])
 
 (define-modify-parser shift!
   [(_:id maybe-ref ... maybe-val)
@@ -142,15 +146,17 @@
    #:with ref:%grefns (syntax/loc this-syntax (maybe-ref ...))
    #:with val:expr #'maybe-val
    (syntax/loc this-syntax
-     (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
-                  (ref.reader ... val) (ref.writer ...)
-                  ref.reader0))])
+     (shift!-fold (ref.getter ... (lambda () (#%expression val)))
+                  (ref.setter ...)
+                  ((ref.preamble ...) ...)
+                  ref.getter0))])
 
 (define-modify-parser rotate!
   [(_:id . ref:%grefns)
    (syntax/loc this-syntax
-     (shift!-fold ((ref.binding ...) ...) ((ref.store ...) ...)
-                  (ref.reader ... ref.reader0) (ref.writer ...)))])
+     (shift!-fold (ref.getter ... ref.getter0)
+                  (ref.setter ...)
+                  ((ref.preamble ...) ...)))])
 
 (define-for-syntax (find-duplicate kws)
   (define table (make-hasheq))
@@ -221,17 +227,16 @@
         #:with rest:rest #'maybe-rest
         (syntax/loc this-syntax
           (begin
-            (let-values ([(proc) proc-expr]
-                         [(arg0) arg0-expr] ...
-                         ref.binding (... ...)
-                         [(arg.val) arg.expr] (... ...)
-                         (... (~? [(rest.val) rest.expr])))
-              (let-values ([(ref.store (... ...))
-                            (rest.app proc arg0 ... ref.reader
-                                      (... (~@ (~? arg.kw) arg.val))
-                                      (... ...)
-                                      (... (~? rest.val)))])
-                (#%expression ref.writer)))
+            (let ()
+              (define proc proc-expr)
+              (define arg0 arg0-expr) ...
+              ref.preamble (... ...)
+              (define arg.val arg.expr) (... ...)
+              (... (~? (define rest.val rest.expr)))
+              (ref.setter
+               (rest.app proc arg0 ... (ref.getter)
+                         (... (~@ (~? arg.kw) arg.val)) (... ...)
+                         (... (~? rest.val)))))
             (void)))]))])
 
 (define-call! call! 0)
@@ -262,18 +267,15 @@
 (define-for-syntax (make-pop! pair? car cdr)
   (syntax-parser
     [(_:id ref:%gref)
-     #:with reader (datum->syntax #'ref.reader
-                                  (syntax-e #'ref.reader)
-                                  #'ref)
-     #:declare reader (maybe-expr/c pair?)
+     #:with val (syntax/loc #'ref (ref.getter))
+     #:declare val (maybe-expr/c pair?)
      #:with car car
      #:with cdr cdr
      (syntax/loc this-syntax
-       (let-values (ref.binding ...)
-         (let ([pair reader.c])
-           (begin0 (car pair)
-             (let-values ([(ref.store ...) (cdr pair)])
-               (#%expression ref.writer))))))]))
+       (let ()
+         ref.preamble ...
+         (define pair val.c)
+         (begin0 (car pair) (ref.setter (cdr pair)))))]))
 
 (define-modify-syntax pop!
   (make-pop! #'pair? #'unsafe-car #'unsafe-cdr))

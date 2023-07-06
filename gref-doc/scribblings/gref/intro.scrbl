@@ -63,8 +63,8 @@ focuses on the technical aspects of @tech{generalized references}.
 The simplest implementation of @tech{generalized references} is as in
 @hyperlink[@collection-file-path["srfi-17.html" "srfi" "scribblings" "srfi-std"]]{SRFI 17},
 resembling the original proposal by @citet[lisp-mac] to an extent.
-That is, a @deftech{getter procedure} can be associated with a
-@deftech{setter procedure}, where
+That is, a @tech{getter procedure} can be associated with a
+@tech{setter procedure}, where
 
 @racketblock[(_proc _arg ...)]
 
@@ -86,39 +86,38 @@ items:
 @itemlist[
  #:style 'ordered
  @item{
-  A sequence of bindings in the form of
-  @racket[([(id ...) expr] ...)] as in @racket[let-values] that set up
-  the @deftech{lexical context};}
+  An @deftech{arity number} for the number of @tech{values}
+  @tech/rep{stored} in the @tech{locations};}
  @item{
-  A sequence of @deftech{store variables}, that is, @racket[id]s that
-  hold the updated @tech{values};}
+  A @deftech{getter procedure} that accepts zero arguments and returns
+  the @tech{values} @tech/rep{stored} in the @tech{locations};}
  @item{
-  A @deftech{reader expression} that evaluates to the @tech{values}
-  @tech/rep{stored} in the @tech{locations} within the
-  @tech/rep{context};}
+  A @deftech{setter procedure} that accepts as many arguments as the
+  @tech/rep{arity} and updates the @tech{locations};}
  @item{
-  A @deftech{writer expression} that @tech{stores} the update
-  @tech{values} held by the @tech/rep{variables} to the
-  @tech{locations} within the @tech/rep{context}.}]
+  A sequence of @deftech{preamble forms} that sets up the environment
+  for the evaluation and validation of sub-expressions.}]
 
-The purpose of singling out the @tech/rep{context} is such that the
-two modes of @deftech/rep{accesses}, that is, reads and writes can be
-separated from the evaluation and validation of sub-expressions.  This
-way, multiple @tech/rep{accesses} can be performed at once while
-preserving the apparent left-to-right @deftech{evaluation order} (see
+The @tech/rep{preambles} are supposed to precede any use of
+@tech/rep{getter} and @tech/rep{setter} within an
+@tech[#:doc rkt-ref]{internal-definition context}, so that any
+introduced @tech[#:doc rkt-ref]{binding} can be referred to.  This
+way, the two modes of @deftech/rep{accesses}, that is, reads and
+writes can be performed within the same context.  In particular,
+multiple @tech/rep{accesses} can be performed at once while preserving
+the apparent left-to-right @deftech{evaluation order} (see
 @secref[#:doc rkt-guide "Evaluation_Order_and_Arity"]).
 
 Another technical advantage is that a @tech/rep{reference} is allowed
 to @deftech{represent} multiple @tech{locations}, including none.  The
-number of @tech/rep{variables} determines the number of
-@deftech{values} @tech/rep{stored} in the @tech{locations}.  A
-@deftech{well-behaved} @tech/rep{reference} must arrange the
-@tech/rep{reader} and @tech/rep{writer} such that the former evaluates
-to as many @tech{values} as @tech/rep{stored} in the @tech{locations},
-and the latter @tech{stores} as many to the @tech{locations}.  The
-results of the @tech/rep{writer} are unspecified, but they should
-generally be @void-const following Racket's convention (see
-@secref[#:doc rkt-guide "void+undefined"]).
+@tech/rep{arity} determines the number of @deftech{values}
+@tech/rep{stored} in the @tech{locations}.  A @deftech{well-behaved}
+@tech/rep{reference} must arrange the @tech/rep{getter} and
+@tech/rep{setter} such that the former returns as many @tech{values}
+as the @tech/rep{arity}, and the latter @tech{stores} as many to the
+@tech{locations}.  The results of the @tech/rep{setter} are
+unspecified, but they should generally be @void-const following
+Racket's convention (see @secref[#:doc rkt-guide "void+undefined"]).
 
 @examples/gref[#:label @list{
                 As an example, consider the @tech{modify macro}

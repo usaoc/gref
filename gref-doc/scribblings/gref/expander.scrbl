@@ -55,9 +55,10 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
          #:contracts ([vals any])]{
  Combines @racket[ref]s into a @tech/rep{reference} that @tech{stores}
  as many @tech{values} as there are @racket[ref]s.  Correspondingly,
- the @tech/rep{context} combines all @tech/rep{contexts}, the
- @tech/rep{reader} produces all @tech/rep{stored} @tech{values}, and
- the @tech/rep{writer} @tech{stores} to all @tech{locations}.}
+ the @tech/rep{arity} is the number of @racket[ref]s, the
+ @tech/rep{getter} returns all @tech/rep{stored} @tech{values}, the
+ @tech/rep{setter} @tech{stores} to all @tech{locations}, and the
+ @tech/rep{preambles} are collected in the apparent order.}
 
 @defset![(set! (mcar mpair) val)
          #:contracts ([mpair mpair?] [val any/c])]{
@@ -74,7 +75,7 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
                       [val any/c])]{
  @tech{Represents} the association for @racket[key] in @racket[hash].
  Note that @racket[failure-result] is ignored by the
- @tech/rep{writer}.  The @tech/rep{writer} further requires
+ @tech/rep{setter}.  The @tech/rep{setter} further requires
  @racket[hash] to be @racket[(not/c immutable?)].}
 
 @defset![(set! (bytes-ref bytes pos) val)
@@ -82,7 +83,7 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
                       [pos exact-nonnegative-integer?]
                       [val byte?])]{
  @tech{Represents} the @racket[pos]th position of @racket[bytes].  The
- @tech/rep{writer} further requires @racket[bytes] to be
+ @tech/rep{setter} further requires @racket[bytes] to be
  @racket[(not/c immutable?)].}
 
 @defset![(set! (string-ref string pos) val)
@@ -90,7 +91,7 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
                       [pos exact-nonnegative-integer?]
                       [val char?])]{
  @tech{Represents} the @racket[pos]th position of @racket[string].
- The @tech/rep{writer} further requires @racket[string] to be
+ The @tech/rep{setter} further requires @racket[string] to be
  @racket[(not/c immutable?)].}
 
 @defset![(set! (vector-ref vector pos) val)
@@ -98,7 +99,7 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
                       [pos exact-nonnegative-integer?]
                       [val any/c])]{
  @tech{Represents} the @racket[pos]th position of @racket[vector].
- The @tech/rep{writer} further requires @racket[vector] to be
+ The @tech/rep{setter} further requires @racket[vector] to be
  @racket[(not/c immutable?)].}
 
 @defset![(set! (vector*-ref vector pos) val)
@@ -110,9 +111,8 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
 
 @defset![(set! (unbox box) val)
          #:contracts ([box box?] [val any/c])]{
- @tech{Represents} the content of @racket[box].  The
- @tech/rep{writer} further requires @racket[box] to be
- @racket[(not/c immutable?)].}
+ @tech{Represents} the content of @racket[box].  The @tech/rep{setter}
+ further requires @racket[box] to be @racket[(not/c immutable?)].}
 
 @defset![(set! (unbox* box) val)
          #:contracts ([box (and/c box? (not/c impersonator?))]

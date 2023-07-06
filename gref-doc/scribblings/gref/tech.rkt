@@ -48,13 +48,12 @@
                  (lambda (prefix abbrev)
                    (values abbrev (string-append prefix abbrev)))
                  #hasheq(("evaluation " . ("order"))
-                         ("generalized " . ("reference"))
-                         ("lexical " . ("context"))
-                         ("store " . ("variable")))
+                         ("generalized " . ("reference")))
                  (lambda (suffix abbrev)
                    (values abbrev (string-append abbrev suffix)))
-                 #hasheq((" procedure" . ("getter" "setter"))
-                         (" expression" . ("reader" "writer")))))]
+                 #hasheq((" form" . ("preamble"))
+                         (" number" . ("arity"))
+                         (" procedure" . ("getter" "setter")))))]
               [(left rights) (in-hash table)]
               [(right) (in-list rights)])
     (fn left right)))

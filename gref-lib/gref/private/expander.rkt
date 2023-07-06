@@ -54,8 +54,10 @@
 
 (define-set!-parser values
   [(_:id . ref:%gref1s)
-   (set!-pack #'(ref.binding ...) #'(ref.store ...)
-              #'ref.reader #'ref.writer)])
+   (apply set!-pack
+          #'ref.getter #'ref.setter
+          (datum (ref.preamble ...))
+          #:arity (datum ref.arity))])
 
 (define-for-syntax (make-mcar mcar set-mcar!)
   (syntax-parser
@@ -63,8 +65,9 @@
      #:declare pair-expr (maybe-expr/c #'mpair?)
      #:with mcar mcar
      #:with set-mcar! set-mcar!
-     (set!-pack #'([(pair) pair-expr.c]) #'(obj)
-                #'(mcar pair) #'(set-mcar! pair obj))]))
+     (set!-pack #'(lambda () (mcar pair))
+                #'(lambda (val) (set-mcar! pair val))
+                #'(define pair pair-expr.c))]))
 
 (define-set!-expander mcar
   (make-mcar #'unsafe-mcar #'unsafe-set-mcar!))
@@ -81,12 +84,14 @@
    #:attr failure (and (datum failure-expr) #'failure)
    #:with mutable-hash (syntax/loc #'hash-expr hash)
    #:declare mutable-hash (expr/c #'mutable/c)
-   (set!-pack #'([(hash) hash-expr.c]
-                 [(key) key-expr]
-                 (~? [(failure) failure-expr.c]))
-              #'(obj)
-              #'(hash-ref hash key (~? failure))
-              #'(hash-set! mutable-hash.c key obj))])
+   (apply set!-pack
+          #'(lambda () (hash-ref hash key (~? failure)))
+          #'(lambda (val) (hash-set! mutable-hash.c key val))
+          `(,#'(define hash hash-expr.c)
+            ,#'(define key key-expr)
+            ,@(if (datum failure-expr)
+                  (list #'(define failure failure-expr.c))
+                  '())))])
 
 (begin-for-syntax
   (define-splicing-syntax-class obj?
@@ -138,27 +143,22 @@
    (syntax/loc this-syntax
      (define-set!-parser name
        [(_:id vector-expr pos-expr)
-        #:declare vector-expr (expr/c #'vector/c)
-        #:declare pos-expr (expr/c #'exact-nonnegative-integer?)
+        #:declare vector-expr (maybe-expr/c #'vector/c)
+        #:declare pos-expr (maybe-expr/c #'exact-nonnegative-integer?)
         #:with mutable-vector (syntax/loc #'vector-expr vector)
-        #:declare mutable-vector (expr/c #'mutable/c)
-        (set!-pack #'([(vector pos)
-                       (if (variable-reference-from-unsafe?
-                            (#%variable-reference))
-                           (values vector-expr pos-expr)
-                           (let ([vector vector-expr.c]
-                                 [pos pos-expr.c])
-                             (check-vector+pos vector pos)
-                             (values vector pos)))])
-                   #'(obj)
-                   #'(vector-ref vector pos)
-                   #'(if (variable-reference-from-unsafe?
-                          (#%variable-reference))
-                         (vector-set! mutable-vector pos obj)
-                         (vector-set! mutable-vector.c pos
-                                      (begin
-                                        (~? (check-obj obj))
-                                        obj))))]))
+        #:declare mutable-vector (maybe-expr/c #'mutable/c)
+        (set!-pack #'(lambda () (vector-ref vector pos))
+                   #'(lambda (val)
+                       (let ([mutable-vector mutable-vector.c])
+                         (~? (unless (variable-reference-from-unsafe?
+                                      (#%variable-reference))
+                               (check-obj val)))
+                         (vector-set! mutable-vector pos val)))
+                   #'(define vector vector-expr.c)
+                   #'(define pos pos-expr.c)
+                   #'(unless (variable-reference-from-unsafe?
+                              (#%variable-reference))
+                       (check-vector+pos vector pos)))]))
    #'(begin check-vector+pos-def (~? check-obj-def) expander-def)])
 
 (define-vector-ref bytes #:type "byte string" #:obj? byte?)
@@ -179,8 +179,9 @@
      #:declare mutable-box (maybe-expr/c #'mutable/c)
      #:with unbox unbox
      #:with set-box! set-box!
-     (set!-pack #'([(box) box-expr.c]) #'(obj)
-                #'(unbox box) #'(set-box! mutable-box.c obj))]))
+     (set!-pack #'(lambda () (unbox box))
+                #'(lambda (val) (set-box! mutable-box.c val))
+                #'(define box box-expr.c))]))
 
 (define-set!-expander unbox
   (make-unbox #'unsafe-unbox #'unsafe-set-box! #'box?))
