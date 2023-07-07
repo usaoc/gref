@@ -33,10 +33,19 @@
 The syntax module @racket[provide]s various bindings useful for user
 extensions.
 
+@(define dot (racketparenfont "."))
 @defform*[[(define-set!-syntax name val)
-           (define-set!-syntax (head args) body ...+)]
-         #:grammar [(name @#,racket[id])]
-         #:contracts ([val any/c])]{
+           (define-set!-syntax header body ...+)]
+          #:grammar [(name @#,racket[id])
+                     (header (header args) (name args))
+                     (args (code:line arg ...)
+                           (code:line arg ... @#,dot @#,racket[id]))
+                     (arg (code:line @#,racket[keyword] id-or-id+expr)
+                          id-or-id+expr)
+                     (id-or-id+expr @#,racket[id]
+                                    [@#,racket[id] default-expr])]
+          #:contracts ([val any/c]
+                       [default-expr any/c])]{
  Like @racket[define-syntax], but the created binding is in the
  @racket['gref/set!] @tech[#:doc rkt-ref]{binding space}.}
 

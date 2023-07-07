@@ -41,6 +41,23 @@
                      #:with val (syntax-local-value #'foo)
                      (syntax/loc this-syntax 'val)])
                   bar)
+                'default)
+  (check-expect (let ()
+                  (define-syntax ((foo _arg #:kw-arg _kw-arg)
+                                  [_opt-arg #f]
+                                  #:opt-kw-arg [_opt-kw-arg #f])
+                    'default)
+                  (define-set!-syntax ((foo _arg #:kw-arg _kw-arg)
+                                       [_opt-arg #f]
+                                       #:opt-kw-arg [_opt-kw-arg #f])
+                    'set!)
+                  (define-syntax-parser bar
+                    [_:id
+                     #:do [(define proc (syntax-local-value #'foo))]
+                     #:with val ((proc 'arg #:kw-arg 'kw-arg)
+                                 'opt-arg #:opt-kw-arg 'opt-kw-arg)
+                     (syntax/loc this-syntax 'val)])
+                  bar)
                 'default))
 
 (test-case "define-set!-syntaxes"

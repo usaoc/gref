@@ -28,16 +28,16 @@
     #:description "definition header"
     #:commit
     #:attributes (name make-fn)
-    (pattern (name:id formal:formal)
+    (pattern (name:id . formals:formals)
       #:attr make-fn
       (lambda (body-stxs)
         (define/syntax-parse (body ...) body-stxs)
-        #'(lambda formal body ...)))
-    (pattern (inner:header formal:formal)
+        #'(lambda formals body ...)))
+    (pattern (inner:header . formals:formals)
       #:attr make-fn
       (lambda (body-stxs)
         (define/syntax-parse (body ...) body-stxs)
-        ((datum inner.make-fn) (list #'(lambda formal body ...))))
+        ((datum inner.make-fn) (list #'(lambda formals body ...))))
       #:with name #'inner.name)))
 
 (define-syntax-parser define-set!-syntax
