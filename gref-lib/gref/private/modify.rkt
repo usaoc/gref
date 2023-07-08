@@ -106,7 +106,7 @@
      (let ()
        preamble0 ...
        (call-with-values (lambda ()
-                           (begin0 (#%expression val0)
+                           (begin0 val0
                              (pset!-fold (getter ...) (setter ...)
                                          (preambles ...) (val ...))))
          setter0)))])
