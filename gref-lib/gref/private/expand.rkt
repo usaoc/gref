@@ -24,7 +24,6 @@
          racket/syntax
          syntax/datum
          syntax/parse
-         (for-syntax racket/base)
          (for-template racket/base))
 
 (define gref-desc-table (make-hasheqv))
