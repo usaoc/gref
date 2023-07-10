@@ -66,8 +66,8 @@
 (begin-for-syntax
   (define-splicing-syntax-class set!-pair
     #:description "set! assignment pair"
-    #:attributes (val getter setter [preamble 1])
-    (pattern (~seq (~var || (%gref #:arity #f)) val:expr))))
+    #:attributes (vals getter setter [preamble 1])
+    (pattern (~seq (~var || (%gref #:arity #f)) vals:expr))))
 
 (define-modify-parser set!
   [(_:id) (syntax/loc this-syntax (void))]
@@ -76,7 +76,7 @@
      (begin
        (let ()
          pair.preamble ...
-         (call-with-values (lambda () (#%expression pair.val))
+         (call-with-values (lambda () (#%expression pair.vals))
            pair.setter))
        ...
        (void)))])
@@ -84,8 +84,8 @@
 (begin-for-syntax
   (define-splicing-syntax-class set!-values-pair
     #:description "set!-values assignment pair"
-    #:attributes (val getter setter [preamble 1])
-    (pattern (~seq :%gref1s val:expr))))
+    #:attributes (vals getter setter [preamble 1])
+    (pattern (~seq (~var || (%gref1s #:tail #f)) vals:expr))))
 
 (define-modify-parser set!-values
   [(_:id) (syntax/loc this-syntax (void))]
@@ -94,36 +94,43 @@
      (begin
        (let ()
          pair.preamble ...
-         (call-with-values (lambda () (#%expression pair.val))
+         (call-with-values (lambda () (#%expression pair.vals))
            pair.setter))
-       ...))])
+       ...
+       (void)))])
 
 (define-syntax-parser pset!-fold
-  [(_ () () () ()) (syntax/loc this-syntax (void))]
-  [(_ (getter0 getter ...) (setter0 setter ...)
-      ((preamble0 ...) preambles ...) (val0 val ...))
+  [(_ () () ()) (syntax/loc this-syntax (void))]
+  [(_ (setter0 setter ...)
+      ((preamble0 ...) preambles ...)
+      (vals0 vals ...))
    (syntax/loc this-syntax
      (let ()
        preamble0 ...
        (call-with-values (lambda ()
-                           (begin0 val0
-                             (pset!-fold (getter ...) (setter ...)
-                                         (preambles ...) (val ...))))
+                           (begin0 vals0
+                             (pset!-fold (setter ...)
+                                         (preambles ...)
+                                         (vals ...))))
          setter0)))])
 
 (define-modify-parser pset!
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
      (begin
-       (pset!-fold (pair.getter ...) (pair.setter ...)
-                   ((pair.preamble ...) ...) (pair.val ...))
+       (pset!-fold (pair.setter ...)
+                   ((pair.preamble ...) ...)
+                   (pair.vals ...))
        (void)))])
 
 (define-modify-parser pset!-values
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
-     (pset!-fold (pair.getter ...) (pair.setter ...)
-                 ((pair.preamble ...) ...) (pair.val ...)))])
+     (begin
+       (pset!-fold (pair.setter ...)
+                   ((pair.preamble ...) ...)
+                   (pair.vals ...))
+       (void)))])
 
 (define-syntax-parser shift!-fold
   [(_ () () () getter) (syntax/loc this-syntax (getter))]
@@ -141,22 +148,22 @@
            setter0))))])
 
 (define-modify-parser shift!
-  [(_:id maybe-ref ... maybe-val)
+  [(_:id maybe-ref ... maybe-vals)
    #:cut
    #:with ref:%grefns (syntax/loc this-syntax (maybe-ref ...))
-   #:with val:expr #'maybe-val
+   #:with vals:expr #'maybe-vals
    (syntax/loc this-syntax
-     (shift!-fold (ref.getter ... (lambda () (#%expression val)))
-                  (ref.setter ...)
-                  ((ref.preamble ...) ...)
+     (shift!-fold (ref.getter ... (lambda () (#%expression vals)))
+                  (ref.setter0 ref.setter ...)
+                  ref.preambless
                   ref.getter0))])
 
 (define-modify-parser rotate!
   [(_:id . ref:%grefns)
    (syntax/loc this-syntax
      (shift!-fold (ref.getter ... ref.getter0)
-                  (ref.setter ...)
-                  ((ref.preamble ...) ...)))])
+                  (ref.setter0 ref.setter ...)
+                  ref.preambless))])
 
 (define-for-syntax (find-duplicate kws)
   (define table (make-hasheq))

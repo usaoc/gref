@@ -140,34 +140,46 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:with setter (track #'(lambda (val) (set! id val)))
     #:with (preamble ...) '()))
 
-(define-syntax-class %gref1s
+(define-syntax-class (%gref1s #:tail [tail #'(void)])
   #:description "1-valued generalized references"
   #:commit
   #:attributes (arity getter setter [preamble 1])
+  (pattern ()
+    #:attr arity 0
+    #:with getter #'(lambda () (values))
+    #:with setter #'(lambda () (void))
+    #:with (preamble ...) '())
   (pattern ((~do (define desc (make-gref-desc 1)))
             (~var ref (%gref #:arity 1 #:desc desc)) ...)
-    #:cut
     #:do [(define given (length (datum (ref ...))))]
     #:attr arity given
     #:with getter #'(lambda () (values (ref.getter) ...))
     #:with (val ...) (for/list ([idx (in-range given)])
                        (format-id #'here "val~a" idx #:source #'here))
-    #:with setter #'(lambda (val ...) (ref.setter val) ... (void))
+    #:attr tail tail
+    #:with setter #'(lambda (val ...) (ref.setter val) ... (~? tail))
     #:with (preamble ...) (datum (ref.preamble ... ...))))
+
+(define-syntax-class (%grefns-tail num)
+  #:description #f
+  #:commit
+  #:attributes ([getter 1] [setter 1] [preamble 2])
+  (pattern ()
+    #:with (getter ...) '()
+    #:with (setter ...) '()
+    #:with ((preamble ...) ...) '())
+  (pattern ((~do (define desc (make-gref-desc num)))
+            (~var || (%gref #:arity num #:desc desc)) ...)))
 
 (define-syntax-class %grefns
   #:description "same-valued generalized references"
   #:commit
-  #:attributes (getter0 [getter 1] [setter 1] [preamble 2])
+  #:attributes (getter0 setter0 [getter 1] [setter 1] preambless)
   (pattern ((~var ref0 (%gref #:arity #f))
-            (~do (define num (datum ref0.arity))
-                 (define desc (make-gref-desc num)))
-            (~var ref (%gref #:arity num #:desc desc)) ...)
-    #:with (getter ...) (datum (ref.getter ...))
-    #:with getter0 (datum ref0.getter)
-    #:with (setter ...) (datum (ref0.setter ref.setter ...))
-    #:with ((preamble ...) ...)
-    (datum ((ref0.preamble ...) (ref.preamble ...) ...))))
+            . (~var || (%grefns-tail (datum ref0.arity))))
+    #:with getter0 #'ref0.getter
+    #:with setter0 #'ref0.setter
+    #:with preambless #'((ref0.preamble ...) (preamble ...) ...)))
 
 (define-syntax-class (gref #:arity [num 1]
                            #:desc [desc (make-gref-desc num)])

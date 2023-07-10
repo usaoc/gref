@@ -87,11 +87,11 @@
    (apply set!-pack
           #'(lambda () (hash-ref hash key (~? failure)))
           #'(lambda (val) (hash-set! mutable-hash.c key val))
-          `(,#'(define hash hash-expr.c)
-            ,#'(define key key-expr)
-            ,@(if (datum failure-expr)
-                  (list #'(define failure failure-expr.c))
-                  '())))])
+          #'(define hash hash-expr.c)
+          #'(define key key-expr)
+          (if (datum failure-expr)
+              (list #'(define failure failure-expr.c))
+              '()))])
 
 (begin-for-syntax
   (define-splicing-syntax-class obj?

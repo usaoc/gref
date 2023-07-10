@@ -15,11 +15,7 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(require racket/contract/base
-         scribble/core
-         scribble/decode)
-(provide (contract-out [deftech/rep (-> pre-content? ... element?)]
-                       [tech/rep (-> pre-content? ... element?)]))
+(provide deftech/rep tech/rep)
 
 (require racket/string
          scribble/core

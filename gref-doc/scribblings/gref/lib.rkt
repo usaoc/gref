@@ -15,9 +15,7 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(require racket/contract/base)
-(provide rkt-guide rkt-ref stx-parse
-         (contract-out [lib-path (-> string? any/c)]))
+(provide lib-path rkt-guide rkt-ref stx-parse)
 
 (require racket/string)
 
