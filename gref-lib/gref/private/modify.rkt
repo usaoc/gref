@@ -245,10 +245,16 @@
 
 (define-for-syntax (make-inc! inc)
   (syntax-parser
-    [(_:id ref:%gref (~optional val))
-     #:declare val (expr/c #'number?)
+    [(_:id ref:%gref (~optional delta-expr))
+     #:declare delta-expr (expr/c #'number?)
      #:with inc inc
-     (syntax/loc this-syntax (call! inc ref (~? val.c 1)))]))
+     (syntax/loc this-syntax
+       (begin
+         (let ()
+           ref.preamble ...
+           (define delta (~? delta-expr.c 1))
+           (ref.setter (inc (ref.getter) delta)))
+         (void)))]))
 
 (define-modify-syntax inc! (make-inc! #'+))
 
@@ -256,9 +262,15 @@
 
 (define-for-syntax (make-push! cons)
   (syntax-parser
-    [(_:id val:expr ref:%gref)
+    [(_:id val-expr:expr ref:%gref)
      #:with cons cons
-     (syntax/loc this-syntax (call2! cons val ref))]))
+     (syntax/loc this-syntax
+       (begin
+         (let ()
+           (define val val-expr)
+           ref.preamble ...
+           (ref.setter (cons val (ref.getter))))
+         (void)))]))
 
 (define-modify-syntax push! (make-push! #'cons))
 
