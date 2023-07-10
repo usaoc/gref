@@ -254,13 +254,15 @@
   (syntax-parser
     [(_:id ref:%gref (~optional delta-expr))
      #:declare delta-expr (expr/c #'number?)
+     #:with val (syntax/loc #'ref (ref.getter))
+     #:declare val (expr/c #'number?)
      #:with inc inc
      (syntax/loc this-syntax
        (begin
          (let ()
            ref.preamble ...
            (define delta (~? delta-expr.c 1))
-           (ref.setter (inc (ref.getter) delta)))
+           (ref.setter (inc val.c delta)))
          (void)))]))
 
 (define-modify-syntax inc! (make-inc! #'+))

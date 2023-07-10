@@ -322,11 +322,15 @@
   (check-expect (let ([bx (box 1)]) (inc! (unbox* bx)) bx) (box 2))
   (check-expect (let ([bx (box 1)]) (inc! (unbox* bx) -1) bx) (box 0))
   (check-exn exn:fail:contract?
+    (lambda () (let ([bx (box 'not-num)]) (inc! (unbox* bx)))))
+  (check-exn exn:fail:contract?
     (lambda () (let ([bx (box 1)]) (inc! (unbox* bx) 'not-num)))))
 
 (test-case "dec!"
   (check-expect (let ([bx (box 1)]) (dec! (unbox* bx)) bx) (box 0))
   (check-expect (let ([bx (box 1)]) (dec! (unbox* bx) -1) bx) (box 2))
+  (check-exn exn:fail:contract?
+    (lambda () (let ([bx (box 'not-num)]) (dec! (unbox* bx)))))
   (check-exn exn:fail:contract?
     (lambda () (let ([bx (box 1)]) (dec! (unbox* bx) 'not-num)))))
 
