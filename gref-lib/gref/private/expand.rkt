@@ -18,10 +18,10 @@
 (provide get-set!-expansion gref set!-pack
          %gref %gref1s %grefns)
 
-(require gref/private/property
+(require gref/private/helper
+         gref/private/property
          gref/private/space
          racket/match
-         racket/syntax
          syntax/datum
          syntax/parse
          (for-template racket/base))
@@ -154,8 +154,7 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:do [(define given (length (datum (ref ...))))]
     #:attr arity given
     #:with getter #'(lambda () (values (ref.getter) ...))
-    #:with (val ...) (for/list ([idx (in-range given)])
-                       (format-id #'here "val~a" idx #:source #'here))
+    #:with (val ...) (format-ids "val~a" given)
     #:attr tail tail
     #:with setter #'(lambda (val ...) (ref.setter val) ... (~? tail))
     #:with (preamble ...) (datum (ref.preamble ... ...))))

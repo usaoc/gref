@@ -34,8 +34,8 @@
          racket/contract/base
          racket/unsafe/ops
          syntax/parse/define
-         (for-syntax gref/private/class
-                     gref/private/expand
+         (for-syntax gref/private/expand
+                     gref/private/helper
                      gref/private/property
                      racket/base
                      racket/symbol

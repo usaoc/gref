@@ -36,12 +36,9 @@
 
 (require racket/unsafe/ops
          syntax/parse/define
-         (for-syntax gref/private/class
-                     gref/private/expand
+         (for-syntax gref/private/expand
+                     gref/private/helper
                      racket/base
-                     racket/keyword
-                     racket/syntax
-                     syntax/datum
                      syntax/parse
                      syntax/transformer))
 
@@ -165,44 +162,7 @@
                   (ref.setter0 ref.setter ...)
                   ref.preambless))])
 
-(define-for-syntax (find-duplicate kws)
-  (define table (make-hasheq))
-  (for/first ([kw (in-list kws)]
-              #:when kw
-              #:do [(define kw-datum (syntax-e kw))]
-              #:unless (and (not (hash-ref table kw-datum #f))
-                            (hash-set! table kw-datum #t)))
-    kw))
-
-(define-for-syntax (generate-vals exprs kws idx)
-  (for/fold ([vals '()]
-             [idx idx]
-             #:result (reverse vals))
-            ([expr (in-list exprs)]
-             [kw (in-list kws)])
-    (define (next val idx) (values (cons val vals) idx))
-    (cond
-      [kw
-       (define sym
-         (string->symbol (keyword->immutable-string (syntax-e kw))))
-       (next (datum->syntax #'here sym expr) idx)]
-      [else
-       (define id (format-id #'here "arg~a" idx #:source expr))
-       (next id (add1 idx))])))
-
 (begin-for-syntax
-  (define-syntax-class (args idx)
-    #:description "#%app arguments"
-    #:commit
-    #:attributes ([kw 1] [expr 1] [val 1])
-    (pattern ((~or* (~describe "keyword argument"
-                      (~seq kw:keyword ~! expr:expr))
-                    expr)
-              ...)
-      #:fail-when (find-duplicate (datum (kw ...)))
-      "duplicate keyword"
-      #:with (val ...)
-      (generate-vals (datum (expr ...)) (datum (kw ...)) idx)))
   (define-syntax-class rest
     #:description "rest argument"
     #:commit
@@ -216,12 +176,9 @@
 
 (define-syntax-parser define-call!
   [(_:id name:id arity:exact-nonnegative-integer)
-   #:do [(define arity-num (syntax-e #'arity))
-         (define (format-args fmt)
-           (for/list ([idx (in-range arity-num)])
-             (format-id #'here fmt idx #:source #'arity)))]
-   #:with (arg0 ...) (format-args "arg~a")
-   #:with (arg0-expr ...) (format-args "arg~a-expr")
+   #:do [(define arity-num (syntax-e #'arity))]
+   #:with (arg0 ...) (format-ids "arg~a" arity-num)
+   #:with (arg0-expr ...) (format-ids "arg~a-expr" arity-num)
    #:with more-idx (datum->syntax #'here (add1 arity-num) #'arity)
    (syntax/loc this-syntax
      (define-modify-parser name
