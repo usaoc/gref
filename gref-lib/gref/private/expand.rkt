@@ -15,7 +15,7 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide get-set!-expansion gref set!-pack
+(provide get-set!-expansion gref set!-pack make-set!-functional
          %gref %gref1s %grefns)
 
 (require gref/private/helper
@@ -82,6 +82,21 @@ identifier with transformer binding (possibly in gref/set! space)"
 (define (set!-pack getter setter #:arity [num 1] #:source [src #f]
                    . preambles)
   (datum->syntax #f (set!-packed num getter setter preambles) src))
+
+(define (make-set!-functional getter setter #:arity [num 1])
+  (define (pack getter setter preambles)
+    (datum->syntax #f (set!-packed num getter setter preambles)))
+  (define vals (format-ids "val~a" num))
+  (make-set!-expander
+   (syntax-parser
+     [(_:id . arg)
+      #:declare arg (args 0)
+      #:with (val ...) vals
+      (pack #`(lambda () (#,getter arg.val ...))
+            #`(lambda (val ...) (#,setter arg.val ... val ...))
+            (for/list ([val (in-list (datum (arg.val ...)))]
+                       [expr (in-list (datum (arg.expr ...)))])
+              #`(define #,val #,expr)))])))
 
 (define-syntax-class (set!-packed-form val track+intro)
   #:description "set!-packed form"

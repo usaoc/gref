@@ -144,6 +144,35 @@
                     'unreached)
                 expect-expand-contract-exn))
 
+(test-case "make-set!-functional"
+  (check-expect (let ([val 'init])
+                  (set! (foo) 'ignored)
+                  (define-set!-syntax foo
+                    (make-set!-functional
+                     #'(lambda () (values))
+                     #'(lambda (_val) (set! val 'set))))
+                  val)
+                'set)
+  (check-expect (let ([val 'init])
+                  (set! (foo) (values))
+                  (define-set!-syntax foo
+                    (make-set!-functional
+                     #'(lambda () (values))
+                     #'(lambda () (set! val 'set))
+                     #:arity 0))
+                  val)
+                'set)
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (make-set!-functional 'not-stx #'setter)))
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (make-set!-functional #'getter 'not-stx)))
+  (check-exn exn:fail:contract?
+    (lambda ()
+      (make-set!-functional #'getter #'setter
+                            #:arity 'not-nonneg-int))))
+
 (test-case "gref"
   (check-expect (let ()
                   (define-set!-syntax foo

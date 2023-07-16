@@ -40,7 +40,11 @@
               (struct-type-property/c
                (-> set!-expander? (-> syntax? syntax?)))]
              [make-set!-expander
-              (-> (-> syntax? syntax?) set!-expander?)]))
+              (-> (-> syntax? syntax?) set!-expander?)]
+             [make-set!-functional
+              (->* (syntax? syntax?)
+                   (#:arity exact-nonnegative-integer?)
+                   set!-expander?)]))
   (provide-syntax-class/contract
     [gref (syntax-class/c () (#:arity maybe-arity/c))]))
 

@@ -93,6 +93,29 @@ extensions.
  Returns an implementation of @racket[prop:set!-expander] that uses
  @racket[proc] as the @tech{@racket[set!] expander}.}
 
+@defproc[(make-set!-functional
+          [getter syntax?] [setter syntax?]
+          [#:arity number exact-nonnegative-integer? 1])
+         syntax?
+         provided-for-syntax]{
+ Returns an implementation of @racket[prop:set!-expander] that
+ @tech/rep{expands} @deftech{functional forms}.  A
+ @tech{functional form} with the shape @racket[(_who _arg ...)] where
+ @var[who] is bound to the resulting implementation will be
+ @tech/rep{expanded} such that:
+
+ @itemlist[
+ @item{Each expression in @var[arg] is evaluated in the apparent
+   @tech/rep{order} and bound to @var[arg-val];}
+ @item{A sequence of @racket[number] identifiers @racket[_val ...] is
+   generated;}
+ @item{The expressions @racket[(lambda () (getter _arg-val ...))] and
+   @racket[(lambda (_val ...) (setter _arg-val ... _val ...))] are
+   used as the @tech/rep{getter} and @tech/rep{setter}.}]
+
+ In other words, it works as a static alternative to @tech{SRFI 17},
+ generalized to multiple @tech/rep{values}.}
+
 @defthing[maybe-arity/c flat-contract?
           provided-for-syntax]{
  A @tech[#:doc rkt-ref]{flat contract} that accepts an expected
