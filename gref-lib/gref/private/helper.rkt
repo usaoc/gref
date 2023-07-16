@@ -23,9 +23,13 @@
          syntax/parse
          (for-template racket/base))
 
+(define fmt-table (make-hash))
+
 (define (format-ids fmt end)
-  (for/list ([idx (in-range end)])
-    (format-id #'here fmt idx #:source #'here)))
+  (define (make-ids)
+    (for/list ([idx (in-range end)])
+      (format-id #'here fmt idx #:source #'here)))
+  (hash-ref! (hash-ref! fmt-table fmt make-hasheqv) end make-ids))
 
 (define-syntax-class (args idx)
   #:description "#%app arguments"

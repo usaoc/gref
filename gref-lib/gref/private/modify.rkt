@@ -40,6 +40,7 @@
                      gref/private/helper
                      racket/base
                      syntax/parse
+                     syntax/parse/experimental/template
                      syntax/transformer))
 
 (define-syntax-parser define-modify-syntax
@@ -63,7 +64,7 @@
 (begin-for-syntax
   (define-splicing-syntax-class set!-pair
     #:description "set! assignment pair"
-    #:attributes (vals getter setter [preamble 1])
+    #:attributes (vals setter [preamble 1])
     (pattern (~seq (~var || (%gref #:arity #f)) vals:expr))))
 
 (define-modify-parser set!
@@ -81,7 +82,7 @@
 (begin-for-syntax
   (define-splicing-syntax-class set!-values-pair
     #:description "set!-values assignment pair"
-    #:attributes (vals getter setter [preamble 1])
+    #:attributes (vals setter [preamble 1])
     (pattern (~seq (~var || (%gref1s #:tail #f)) vals:expr))))
 
 (define-modify-parser set!-values
@@ -96,53 +97,57 @@
        ...
        (void)))])
 
-(define-syntax-parser pset!-fold
-  [(_ () () ()) (syntax/loc this-syntax (void))]
-  [(_ (setter0 setter ...)
-      ((preamble0 ...) preambles ...)
-      (vals0 vals ...))
-   (syntax/loc this-syntax
-     (let ()
-       preamble0 ...
-       (call-with-values (lambda ()
-                           (begin0 vals0
-                             (pset!-fold (setter ...)
-                                         (preambles ...)
-                                         (vals ...))))
-         setter0)))])
+(begin-for-syntax
+  (define-template-metafunction pset!-fold
+    (syntax-parser
+      [(_ ((preamble0 ...) . preambless)
+          (vals0 . valss)
+          (setter0 . (~or* () setters)))
+       (syntax/loc this-syntax
+         (let ()
+           preamble0 ...
+           (call-with-values
+               (lambda ()
+                 (~? (begin0 vals0
+                       (pset!-fold preambless valss setters))
+                     vals0))
+             setter0)))])))
 
 (define-modify-parser pset!
+  [(_:id) (syntax/loc this-syntax (void))]
   [(_:id pair:set!-pair ...)
    (syntax/loc this-syntax
      (begin
-       (pset!-fold (pair.setter ...)
-                   ((pair.preamble ...) ...)
-                   (pair.vals ...))
+       (pset!-fold ((pair.preamble ...) ...)
+                   (pair.vals ...)
+                   (pair.setter ...))
        (void)))])
 
 (define-modify-parser pset!-values
+  [(_:id) (syntax/loc this-syntax (void))]
   [(_:id pair:set!-values-pair ...)
    (syntax/loc this-syntax
      (begin
-       (pset!-fold (pair.setter ...)
-                   ((pair.preamble ...) ...)
-                   (pair.vals ...))
+       (pset!-fold ((pair.preamble ...) ...)
+                   (pair.vals ...)
+                   (pair.setter ...))
        (void)))])
 
-(define-syntax-parser shift!-fold
-  [(_ () () () getter) (syntax/loc this-syntax (getter))]
-  [(_ (getter1 getter ...)
-      (setter0 setter ...)
-      ((preamble0 ...) preambles ...)
-      (~optional getter0))
-   (syntax/loc this-syntax
-     (let ()
-       preamble0 ...
-       (begin0 (~? (getter0) (void))
-         (call-with-values (lambda ()
-                             (shift!-fold (getter ...) (setter ...)
-                                          (preambles ...) getter1))
-           setter0))))])
+(begin-for-syntax
+  (define-template-metafunction shift!-fold
+    (syntax-parser
+      [(_ ((preamble0 ...) . preambless)
+          vals0 (vals1 . valss)
+          (setter0 . (~or* () setters)))
+       (syntax/loc this-syntax
+         (let ()
+           preamble0 ...
+           (begin0 vals0
+             (call-with-values
+                 (lambda ()
+                   (~? (shift!-fold preambless vals1 valss setters)
+                       vals1))
+               setter0))))])))
 
 (define-modify-parser shift!
   [(_:id maybe-ref ... maybe-vals)
@@ -150,17 +155,16 @@
    #:with ref:%grefns (syntax/loc this-syntax (maybe-ref ...))
    #:with vals:expr #'maybe-vals
    (syntax/loc this-syntax
-     (shift!-fold (ref.getter ... (lambda () (#%expression vals)))
-                  (ref.setter0 ref.setter ...)
-                  ref.preambless
-                  ref.getter0))])
+     (shift!-fold ref.preambless
+                  (ref.getter0) ((ref.getter) ... vals)
+                  (ref.setter0 ref.setter ...)))])
 
 (define-modify-parser rotate!
   [(_:id . ref:%grefns)
    (syntax/loc this-syntax
-     (shift!-fold (ref.getter ... ref.getter0)
-                  (ref.setter0 ref.setter ...)
-                  ref.preambless))])
+     (shift!-fold ref.preambless
+                  (void) ((ref.getter) ... (ref.getter0))
+                  (ref.setter0 ref.setter ...)))])
 
 (begin-for-syntax
   (define-syntax-class rest
