@@ -84,11 +84,11 @@
 
 (define-set!-parser hash-ref
   [(who:id hash-expr key-expr:expr (~optional failure-expr))
-   #:declare hash-expr (expr/c #'hash?)
-   #:declare failure-expr (expr/c #'failure-result/c)
+   #:declare hash-expr (maybe-expr/c #'hash?)
+   #:declare failure-expr (maybe-expr/c #'failure-result/c)
    #:attr failure (and (datum failure-expr) #'failure)
    #:with mutable-hash (syntax/loc #'hash-expr hash)
-   #:declare mutable-hash (expr/c #'mutable/c)
+   #:declare mutable-hash (maybe-expr/c #'mutable/c)
    (define namer (make-namer #'who))
    (apply set!-pack
           (namer #'(lambda () (hash-ref hash key (~? failure))))

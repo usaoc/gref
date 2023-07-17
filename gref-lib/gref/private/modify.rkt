@@ -225,9 +225,9 @@
 (define-for-syntax (make-inc! inc)
   (syntax-parser
     [(_:id ref:%gref (~optional delta-expr))
-     #:declare delta-expr (expr/c #'number?)
+     #:declare delta-expr (maybe-expr/c #'number?)
      #:with val (syntax/loc #'ref (ref.getter))
-     #:declare val (expr/c #'number?)
+     #:declare val (maybe-expr/c #'number?)
      #:with inc inc
      (syntax/loc this-syntax
        (begin
