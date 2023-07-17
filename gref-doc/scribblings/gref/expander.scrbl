@@ -68,15 +68,15 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
          #:contracts ([mpair mpair?] [val any/c])]{
  @tech{Represents} the @racket[mcdr] of @racket[mpair].}
 
-@defset![(set! (hash-ref hash key failure-result) val)
+@defset![(set! (hash-ref hash key failure) val)
          #:contracts ([hash hash?]
                       [key any/c]
-                      [failure-result failure-result/c]
+                      [failure failure-result/c]
                       [val any/c])]{
  @tech{Represents} the association for @racket[key] in @racket[hash].
- Note that @racket[failure-result] is ignored by the
- @tech/rep{setter}.  The @tech/rep{setter} further requires
- @racket[hash] to be @racket[(not/c immutable?)].}
+ If no such association is found, the result of @racket[failure] is
+ used.  The @tech/rep{setter} further requires @racket[hash] to be
+ @racket[(not/c immutable?)].}
 
 @defset![(set! (bytes-ref bytes pos) val)
          #:contracts ([bytes bytes?]

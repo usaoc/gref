@@ -76,14 +76,14 @@ is always @|void-const|.
          #:contracts ([vals any])]{
  Like @racket[pset!], but constrained to multiple @racket[gref]s.}
 
-@defform[(shift! ref ...+ vals)
-         #:grammar [(ref @#,racket[(gref #:arity _number)])]
+@defform[(shift! ref0 ref ... vals)
+         #:grammar [(ref0 @#,racket[(gref #:arity #f)])
+                    (ref @#,racket[(gref #:arity _number)])]
          #:contracts ([vals any])]{
- @tech{Stores} the @tech{values} @tech/rep{stored} in the @math{n+1}th
- @racket[ref] to the @math{n}th @racket[ref] @tech{parallelly}, then
- @tech{stores} the results of @racket[vals] to the last @racket[ref].
- Returns the @tech{values} originally @tech/rep{stored} in the first
- @racket[ref].  The first @racket[ref] determines the @var[number].
+ Shifts from right to left, that is, @tech{stores} the @tech{values}
+ from the @math{n+1}th @tech/rep{reference} (including @racket[vals]
+ as if it were one) to the @math{n}th @tech/rep{reference}.  The
+ @tech/rep{arity} of @racket[ref0] is used as @var[number].
 
  @examples/gref[(define foo (box 1))
                 (define bar (box 2))
@@ -91,13 +91,13 @@ is always @|void-const|.
                 foo
                 bar]}
 
-@defform[(rotate! ref ...+)
-         #:grammar [(ref @#,racket[(gref #:arity _number)])]]{
- @tech{Stores} the @tech{values} @tech/rep{stored} in the @math{n+1}th
- @racket[ref] to the @math{n}th @racket[ref] @tech{parallelly}, then
- @tech{stores} the @tech{values} originally @tech/rep{stored} in the
- first @racket[ref] to the last @racket[ref].  The first @racket[ref]
- determines the @var[number].
+@defform[(rotate! ref0 ref ...)
+         #:grammar [(ref0 @#,racket[(gref #:arity #f)])
+                    (ref @#,racket[(gref #:arity _number)])]]{
+ Rotates from right to left (wrapping around), that is, @tech{stores}
+ the @tech{values} from the @math{n+1}th (modulo @math{n})
+ @tech/rep{reference} to the @math{n}th @tech/rep{reference}.  The
+ @tech/rep{arity} of @racket[ref0] is used as @var[number].
 
  @examples/gref[(define foo (box 1))
                 (define bar (box 2))
