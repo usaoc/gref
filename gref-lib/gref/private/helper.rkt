@@ -15,7 +15,7 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide format-ids args maybe-expr/c)
+(provide format-ids make-namer args maybe-expr/c)
 
 (require racket/keyword
          racket/syntax
@@ -30,6 +30,10 @@
     (for/list ([idx (in-range end)])
       (format-id #'here fmt idx #:source #'here)))
   (hash-ref! (hash-ref! fmt-table fmt make-hasheqv) end make-ids))
+
+(define (make-namer name-id)
+  (define name (syntax-e name-id))
+  (lambda (stx) (syntax-property stx 'inferred-name name)))
 
 (define-syntax-class (args idx)
   #:description "#%app arguments"

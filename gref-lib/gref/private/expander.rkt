@@ -53,20 +53,25 @@
      (define-set!-expander name (syntax-parser . tail)))])
 
 (define-set!-parser values
-  [(_:id . ref:%gref1s)
+  [(who:id . ref:%gref1s)
+   #:do [(define arity (datum ref.given))]
+   #:with (val ...) (format-ids "val~a" arity)
+   (define namer (make-namer #'who))
    (apply set!-pack
-          #'ref.getter #'ref.setter
-          (datum (ref.preamble ...))
-          #:arity (datum ref.arity))])
+          (namer #'(lambda () (values (ref.getter) ...)))
+          (namer #'(lambda (val ...) (ref.setter val) ... (void)))
+          (datum (ref.preamble ... ...))
+          #:arity arity)])
 
 (define-for-syntax (make-mcar mcar set-mcar!)
   (syntax-parser
-    [(_:id pair-expr)
+    [(who:id pair-expr)
      #:declare pair-expr (maybe-expr/c #'mpair?)
      #:with mcar mcar
      #:with set-mcar! set-mcar!
-     (set!-pack #'(lambda () (mcar pair))
-                #'(lambda (val) (set-mcar! pair val))
+     (define namer (make-namer #'who))
+     (set!-pack (namer #'(lambda () (mcar pair)))
+                (namer #'(lambda (val) (set-mcar! pair val)))
                 #'(define pair pair-expr.c))]))
 
 (define-set!-expander mcar
@@ -78,15 +83,16 @@
 (define mutable/c (not/c immutable?))
 
 (define-set!-parser hash-ref
-  [(_:id hash-expr key-expr:expr (~optional failure-expr))
+  [(who:id hash-expr key-expr:expr (~optional failure-expr))
    #:declare hash-expr (expr/c #'hash?)
    #:declare failure-expr (expr/c #'failure-result/c)
    #:attr failure (and (datum failure-expr) #'failure)
    #:with mutable-hash (syntax/loc #'hash-expr hash)
    #:declare mutable-hash (expr/c #'mutable/c)
+   (define namer (make-namer #'who))
    (apply set!-pack
-          #'(lambda () (hash-ref hash key (~? failure)))
-          #'(lambda (val) (hash-set! mutable-hash.c key val))
+          (namer #'(lambda () (hash-ref hash key (~? failure))))
+          (namer #'(lambda (val) (hash-set! mutable-hash.c key val)))
           #'(define hash hash-expr.c)
           #'(define key key-expr)
           (if (datum failure-expr)
@@ -142,18 +148,21 @@
    #:with expander-def
    (syntax/loc this-syntax
      (define-set!-parser name
-       [(_:id vector-expr pos-expr)
+       [(who:id vector-expr pos-expr)
         #:declare vector-expr (maybe-expr/c #'vector/c)
         #:declare pos-expr (maybe-expr/c #'exact-nonnegative-integer?)
         #:with mutable-vector (syntax/loc #'vector-expr vector)
         #:declare mutable-vector (maybe-expr/c #'mutable/c)
-        (set!-pack #'(lambda () (vector-ref vector pos))
-                   #'(lambda (val)
-                       (let ([mutable-vector mutable-vector.c])
-                         (~? (unless (variable-reference-from-unsafe?
-                                      (#%variable-reference))
-                               (check-obj val)))
-                         (vector-set! mutable-vector pos val)))
+        (define namer (make-namer #'who))
+        (define setter
+          #'(lambda (val)
+              (let ([mutable-vector mutable-vector.c])
+                (~? (unless (variable-reference-from-unsafe?
+                             (#%variable-reference))
+                      (check-obj val)))
+                (vector-set! mutable-vector pos val))))
+        (set!-pack (namer #'(lambda () (vector-ref vector pos)))
+                   (namer setter)
                    #'(define vector vector-expr.c)
                    #'(define pos pos-expr.c)
                    #'(unless (variable-reference-from-unsafe?
@@ -173,14 +182,15 @@
 
 (define-for-syntax (make-unbox unbox set-box! box/c)
   (syntax-parser
-    [(_:id box-expr)
+    [(who:id box-expr)
      #:declare box-expr (maybe-expr/c box/c)
      #:with mutable-box (syntax/loc #'box-expr box)
      #:declare mutable-box (maybe-expr/c #'mutable/c)
      #:with unbox unbox
      #:with set-box! set-box!
-     (set!-pack #'(lambda () (unbox box))
-                #'(lambda (val) (set-box! mutable-box.c val))
+     (define namer (make-namer #'who))
+     (set!-pack (namer #'(lambda () (unbox box)))
+                (namer #'(lambda (val) (set-box! mutable-box.c val)))
                 #'(define box box-expr.c))]))
 
 (define-set!-expander unbox

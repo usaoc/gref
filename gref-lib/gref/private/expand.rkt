@@ -89,11 +89,13 @@ identifier with transformer binding (possibly in gref/set! space)"
   (define vals (format-ids "val~a" num))
   (make-set!-expander
    (syntax-parser
-     [(_:id . arg)
+     [(who:id . arg)
       #:declare arg (args 0)
       #:with (val ...) vals
-      (pack #`(lambda () (#,getter arg.val ...))
-            #`(lambda (val ...) (#,setter arg.val ... val ...))
+      (define namer (make-namer #'who))
+      (pack (namer #`(lambda () (#,getter arg.val ...)))
+            (namer #`(lambda (val ...)
+                       (#,setter arg.val ... val ...)))
             (for/list ([val (in-list (datum (arg.val ...)))]
                        [expr (in-list (datum (arg.expr ...)))])
               #`(define #,val #,expr)))])))
@@ -150,29 +152,24 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:cut
     #:fail-unless (check-num num 1) (make-mismatch desc 1)
     #:attr arity 1
-    #:do [(define track (make-track this-syntax #'id))]
-    #:with getter (track #'(lambda () id))
-    #:with setter (track #'(lambda (val) (set! id val)))
+    #:do [(define namer (make-namer #'id))
+          (define track (make-track this-syntax #'id))]
+    #:with getter (track (namer #'(lambda () id)))
+    #:with setter (track (namer #'(lambda (val) (set! id val))))
     #:with (preamble ...) '()))
 
-(define-syntax-class (%gref1s #:tail [tail #'(void)])
+(define-syntax-class %gref1s
   #:description "1-valued generalized references"
   #:commit
-  #:attributes (arity getter setter [preamble 1])
+  #:attributes (given [getter 1] [setter 1] [preamble 2])
   (pattern ()
-    #:attr arity 0
-    #:with getter #'(lambda () (values))
-    #:with setter #'(lambda () (void))
-    #:with (preamble ...) '())
+    #:attr given 0
+    #:with (getter ...) '()
+    #:with (setter ...) '()
+    #:with ((preamble ...) ...) '())
   (pattern ((~do (define desc (make-gref-desc 1)))
-            (~var ref (%gref #:arity 1 #:desc desc)) ...)
-    #:do [(define given (length (datum (ref ...))))]
-    #:attr arity given
-    #:with getter #'(lambda () (values (ref.getter) ...))
-    #:with (val ...) (format-ids "val~a" given)
-    #:attr tail tail
-    #:with setter #'(lambda (val ...) (ref.setter val) ... (~? tail))
-    #:with (preamble ...) (datum (ref.preamble ... ...))))
+            (~and (~var || (%gref #:arity 1 #:desc desc)) ref) ...)
+    #:attr given (length (datum (ref ...)))))
 
 (define-syntax-class (%grefns-tail num)
   #:description #f
@@ -188,9 +185,12 @@ identifier with transformer binding (possibly in gref/set! space)"
 (define-syntax-class %grefns
   #:description "same-valued generalized references"
   #:commit
-  #:attributes (getter0 setter0 [getter 1] [setter 1] preambless)
+  #:attributes (given
+                getter0 setter0 [getter 1] [setter 1] preambless)
   (pattern ((~var ref0 (%gref #:arity #f))
-            . (~var || (%grefns-tail (datum ref0.arity))))
+            (~do (define num (datum ref0.arity)))
+            . (~var || (%grefns-tail num)))
+    #:attr given num
     #:with getter0 #'ref0.getter
     #:with setter0 #'ref0.setter
     #:with preambless #'((ref0.preamble ...) (preamble ...) ...)))
