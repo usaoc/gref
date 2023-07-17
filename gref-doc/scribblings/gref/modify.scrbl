@@ -76,7 +76,7 @@ is always @|void-const|.
          #:contracts ([vals any])]{
  Like @racket[pset!], but constrained to multiple @racket[gref]s.}
 
-@defform[(shift! ref ... vals)
+@defform[(shift! ref ...+ vals)
          #:grammar [(ref @#,racket[(gref #:arity _number)])]
          #:contracts ([vals any])]{
  @tech{Stores} the @tech{values} @tech/rep{stored} in the @math{n+1}th
