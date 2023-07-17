@@ -53,8 +53,8 @@
      (define-set!-expander name (syntax-parser . tail)))])
 
 (define-set!-parser values
-  [(who:id . ref:%gref1s)
-   #:do [(define arity (datum ref.given))]
+  [(who:id . ref:%grefs)
+   #:do [(define arity (length (syntax->list #'ref)))]
    #:with (val ...) (format-ids "val~a" arity)
    (define namer (make-namer #'who))
    (apply set!-pack

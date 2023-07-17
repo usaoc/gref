@@ -198,7 +198,6 @@
 (define expect-void (expect-pred void?))
 
 (test-case "set!"
-  (check-expect (set!) expect-void)
   (check-expect (set! (values) (values)) expect-void)
   (check-expect (lambda ()
                   (let ([bx1 (box 1)] [bx2 (box 2)])
@@ -214,7 +213,6 @@
                 (expect-return 3 4 3 4)))
 
 (test-case "set!-values"
-  (check-expect (set!-values) expect-void)
   (check-expect (set!-values () (values)) expect-void)
   (check-expect (lambda ()
                   (let ([bx1 (box 1)] [bx2 (box 2)])
@@ -230,7 +228,6 @@
                 (expect-return 3 4 3 4)))
 
 (test-case "pset!"
-  (check-expect (pset!) expect-void)
   (check-expect (pset! (values) (values)) expect-void)
   (check-expect (lambda ()
                   (let ([bx1 (box 1)] [bx2 (box 2)])
@@ -246,7 +243,6 @@
                 (expect-return 3 4 1 2)))
 
 (test-case "pset!-values"
-  (check-expect (pset!-values) expect-void)
   (check-expect (pset!-values () (values)) expect-void)
   (check-expect (lambda ()
                   (let ([bx1 (box 1)] [bx2 (box 2)])

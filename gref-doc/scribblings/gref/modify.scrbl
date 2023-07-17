@@ -34,20 +34,20 @@ on @tech/rep{references}.  They are defined as usual
 procedures.  Unless otherwise stated, the result of a modify macro
 is always @|void-const|.
 
-@defform[(set! pair ...)
+@defform[(set! pair ...+)
          #:grammar [(pair (code:line ref vals))
                     (ref @#,racket[(gref #:arity #f)])]
          #:contracts ([vals any])]{
  @tech{Stores} the results of @racket[vals]s to @racket[ref]s
  @deftech{sequentially} in the apparent @tech/rep{order}.}
 
-@defform[(set!-values pair ...)
+@defform[(set!-values pair ...+)
          #:grammar [(pair (code:line (ref ...) vals))
                     (ref @#,racket[gref])]
          #:contracts ([vals any])]{
  Like @racket[set!], but constrained to multiple @racket[gref]s.}
 
-@defform[(pset! pair ...)
+@defform[(pset! pair ...+)
          #:grammar [(pair (code:line ref vals))
                     (ref @#,racket[(gref #:arity #f)])]
          #:contracts ([vals any])]{
@@ -70,7 +70,7 @@ is always @|void-const|.
                 foo
                 bar]}
 
-@defform[(pset!-values pair ...)
+@defform[(pset!-values pair ...+)
          #:grammar [(pair (code:line (ref ...) vals))
                     (ref @#,racket[gref])]
          #:contracts ([vals any])]{
@@ -91,7 +91,7 @@ is always @|void-const|.
                 foo
                 bar]}
 
-@defform[(rotate! ref0 ref ...)
+@defform[(rotate! ref0 ref ...+)
          #:grammar [(ref0 @#,racket[(gref #:arity #f)])
                     (ref @#,racket[(gref #:arity _number)])]]{
  Rotates from right to left (wrapping around), that is, @tech{stores}

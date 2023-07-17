@@ -80,8 +80,7 @@
       #:with (val ...) (format-ids "val~a" (datum arity)))))
 
 (define-modify-parser set!
-  [(_:id) (syntax/loc this-syntax (void))]
-  [(_:id pair:set!-pair ...)
+  [(_:id pair:set!-pair ...+)
    (syntax/loc this-syntax
      (begin
        (let ()
@@ -94,12 +93,12 @@
   (define-splicing-syntax-class set!-values-pair
     #:description "set!-values assignment pair"
     #:attributes ([val 1] vals [setter 1] [preamble 2])
-    (pattern (~seq :%gref1s vals:expr)
-      #:with (val ...) (format-ids "val~a" (datum given)))))
+    (pattern (~seq (~and :%grefs ref) vals:expr)
+      #:do [(define arity (length (syntax->list #'ref)))]
+      #:with (val ...) (format-ids "val~a" arity))))
 
 (define-modify-parser set!-values
-  [(_:id) (syntax/loc this-syntax (void))]
-  [(_:id pair:set!-values-pair ...)
+  [(_:id pair:set!-values-pair ...+)
    (syntax/loc this-syntax
      (begin
        (let ()
@@ -123,8 +122,7 @@
                        call0 ...)))])))
 
 (define-modify-parser pset!
-  [(_:id) (syntax/loc this-syntax (void))]
-  [(_:id pair:set!-pair ...)
+  [(_:id pair:set!-pair ...+)
    (syntax/loc this-syntax
      (begin
        (pset!-fold ((pair.preamble ...) ...)
@@ -133,8 +131,7 @@
        (void)))])
 
 (define-modify-parser pset!-values
-  [(_:id) (syntax/loc this-syntax (void))]
-  [(_:id pair:set!-values-pair ...)
+  [(_:id pair:set!-values-pair ...+)
    (syntax/loc this-syntax
      (begin
        (pset!-fold ((pair.preamble ... ...) ...)
@@ -159,23 +156,33 @@
                          call0))))])))
 
 (define-modify-parser shift!
-  [(_:id maybe-ref ... maybe-vals)
+  [(_:id maybe-ref0 maybe-ref ... maybe-vals)
    #:cut
-   #:with ref:%grefns (syntax/loc this-syntax (maybe-ref ...))
+   #:with ref0 #'maybe-ref0
+   #:declare ref0 (%gref #:arity #f)
+   #:do [(define arity (datum ref0.arity))]
+   #:with ref (datum (maybe-ref ...))
+   #:declare ref (%grefs #:arity arity)
    #:with vals:expr #'maybe-vals
-   #:with (val ...) (format-ids "val~a" (datum ref.given))
+   #:with (val ...) (format-ids "val~a" arity)
    (syntax/loc this-syntax
-     (shift!-fold ref.preambless
-                  (ref.getter0) ((ref.getter) ... vals)
-                  ((ref.setter0 val ...) (ref.setter val ...) ...)))])
+     (shift!-fold ((ref0.preamble ...) (ref.preamble ...) ...)
+                  (ref0.getter) ((ref.getter) ... vals)
+                  ((ref0.setter val ...) (ref.setter val ...) ...)))])
 
 (define-modify-parser rotate!
-  [(_:id . ref:%grefns)
-   #:with (val ...) (format-ids "val~a" (datum ref.given))
+  [(_:id maybe-ref0 maybe-ref ...+)
+   #:cut
+   #:with ref0 #'maybe-ref0
+   #:declare ref0 (%gref #:arity #f)
+   #:do [(define arity (datum ref0.arity))]
+   #:with ref (datum (maybe-ref ...))
+   #:declare ref (%grefs #:arity arity)
+   #:with (val ...) (format-ids "val~a" arity)
    (syntax/loc this-syntax
-     (shift!-fold ref.preambless
-                  (void) ((ref.getter) ... (ref.getter0))
-                  ((ref.setter0 val ...) (ref.setter val ...) ...)))])
+     (shift!-fold ((ref0.preamble ...) (ref.preamble ...) ...)
+                  (void) ((ref.getter) ... (ref0.getter))
+                  ((ref0.setter val ...) (ref.setter val ...) ...)))])
 
 (begin-for-syntax
   (define-syntax-class rest

@@ -16,7 +16,7 @@
 ;; <https://www.gnu.org/licenses/>.
 
 (provide get-set!-expansion gref set!-pack make-set!-functional
-         %gref %gref1s %grefns)
+         %gref %grefs)
 
 (require gref/private/helper
          gref/private/property
@@ -158,20 +158,7 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:with setter (track (namer #'(lambda (val) (set! id val))))
     #:with (preamble ...) '()))
 
-(define-syntax-class %gref1s
-  #:description "1-valued generalized references"
-  #:commit
-  #:attributes (given [getter 1] [setter 1] [preamble 2])
-  (pattern ()
-    #:attr given 0
-    #:with (getter ...) '()
-    #:with (setter ...) '()
-    #:with ((preamble ...) ...) '())
-  (pattern ((~do (define desc (make-gref-desc 1)))
-            (~and (~var || (%gref #:arity 1 #:desc desc)) ref) ...)
-    #:attr given (length (datum (ref ...)))))
-
-(define-syntax-class (%grefns-tail num)
+(define-syntax-class (%grefs #:arity [num 1])
   #:description #f
   #:commit
   #:attributes ([getter 1] [setter 1] [preamble 2])
@@ -181,19 +168,6 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:with ((preamble ...) ...) '())
   (pattern ((~do (define desc (make-gref-desc num)))
             (~var || (%gref #:arity num #:desc desc)) ...)))
-
-(define-syntax-class %grefns
-  #:description "same-valued generalized references"
-  #:commit
-  #:attributes (given
-                getter0 setter0 [getter 1] [setter 1] preambless)
-  (pattern ((~var ref0 (%gref #:arity #f))
-            (~do (define num (datum ref0.arity)))
-            . (~var || (%grefns-tail num)))
-    #:attr given num
-    #:with getter0 #'ref0.getter
-    #:with setter0 #'ref0.setter
-    #:with preambless #'((ref0.preamble ...) (preamble ...) ...)))
 
 (define-syntax-class (gref #:arity [num 1]
                            #:desc [desc (make-gref-desc num)])
