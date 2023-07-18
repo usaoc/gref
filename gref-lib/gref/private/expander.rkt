@@ -80,12 +80,14 @@
 (define-set!-expander mcdr
   (make-mcar #'unsafe-mcdr #'unsafe-set-mcdr!))
 
+(define failure/c (if/c procedure? (-> any/c) any/c))
+
 (define mutable/c (not/c immutable?))
 
 (define-set!-parser hash-ref
   [(who:id hash-expr key-expr:expr (~optional failure-expr))
    #:declare hash-expr (maybe-expr/c #'hash?)
-   #:declare failure-expr (maybe-expr/c #'failure-result/c)
+   #:declare failure-expr (maybe-expr/c #'failure/c)
    #:attr failure (and (datum failure-expr) #'failure)
    #:with mutable-hash (syntax/loc #'hash-expr hash)
    #:declare mutable-hash (maybe-expr/c #'mutable/c)

@@ -71,7 +71,7 @@ thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
 @defset![(set! (hash-ref hash key failure) val)
          #:contracts ([hash hash?]
                       [key any/c]
-                      [failure failure-result/c]
+                      [failure (if/c procedure? (-> any/c) any/c)]
                       [val any/c])]{
  @tech{Represents} the association for @racket[key] in @racket[hash].
  If no such association is found, the result of @racket[failure] is

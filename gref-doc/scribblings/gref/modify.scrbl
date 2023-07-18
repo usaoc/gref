@@ -112,7 +112,7 @@ is always @|void-const|.
           #:grammar [(ref @#,racket[gref])
                      (arg (code:line @#,racket[keyword] arg-expr)
                           arg-expr)]
-          #:contracts ([proc procedure?]
+          #:contracts ([proc (unconstrained-domain-> any/c)]
                        [arg-expr any/c]
                        [arg-list-expr list?])]{
  Applies (see
@@ -129,7 +129,7 @@ is always @|void-const|.
           #:grammar [(ref @#,racket[gref])
                      (arg (code:line @#,racket[keyword] arg-expr)
                           arg-expr)]
-          #:contracts ([proc procedure?]
+          #:contracts ([proc (unconstrained-domain-> any/c)]
                        [arg0-expr any/c]
                        [arg-expr any/c]
                        [arg-list-expr list?])]{
