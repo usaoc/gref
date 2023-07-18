@@ -15,220 +15,236 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(require expect/rackunit
-         gref/base
+(require gref/base
          gref/syntax
-         syntax/parse
+         rackunit/spec
          syntax/parse/define
-         (except-in expect attribute)
-         (only-in rackunit test-case)
+         tests/gref/helper
          (for-syntax racket/base
                      syntax/parse)
          (for-template gref/syntax))
 
-(define expect-expand-syntax-exn
-  (expect-expand (expect-raise (expect-struct exn:fail:syntax))))
+(describe "define-set!-syntax"
+  (context "given value"
+    (it "defines it in gref/set! space"
+      (define-syntax trans 'default)
+      (define-set!-syntax trans 'gref/set!)
+      (define-syntax-parser get-space
+        [(_:id)
+         #:with space (syntax-local-value #'trans)
+         (syntax/loc this-syntax 'space)])
+      (check-value 'default (get-space))))
+  (context "given procedure"
+    (it "defines it in gref/set! space"
+      (define-syntax ((trans _arg #:kw-arg _kw-arg)
+                      [_opt-arg 'ignored]
+                      #:opt-kw-arg [_opt-kw-arg 'ignored])
+        'default)
+      (define-set!-syntax ((trans _arg #:kw-arg _kw-arg)
+                           [_opt-arg 'ignored]
+                           #:opt-kw-arg [_opt-kw-arg 'ignored])
+        'set!)
+      (define-syntax-parser get-space
+        [(_:id)
+         #:do [(define proc (syntax-local-value #'trans))]
+         #:with space ((proc 'ignored #:kw-arg 'ignored)
+                       'ignored #:opt-kw-arg 'ignored)
+         (syntax/loc this-syntax 'space)])
+      (check-value 'default (get-space)))))
 
-(define expect-expand-contract-exn
-  (expect-expand (expect-raise (expect-struct exn:fail:contract))))
+(describe "define-set!-syntaxes"
+  (context "given values"
+    (it "defines them in gref/set! space"
+      (define-syntaxes (trans1 trans2)
+        (values 'default 'default))
+      (define-set!-syntaxes (trans1 trans2)
+        (values 'gref/set! 'gref/set!))
+      (define-syntax-parser get-spaces
+        [(_:id)
+         #:with space1 (syntax-local-value #'trans1)
+         #:with space2 (syntax-local-value #'trans2)
+         (syntax/loc this-syntax (values 'space1 'space2))])
+      (check-values ('default 'default) (get-spaces)))))
 
-(test-case "define-set!-syntax"
-  (check-expect (let ()
-                  (define-syntax foo 'default)
-                  (define-set!-syntax foo 'set!)
-                  (define-syntax-parser bar
-                    [_:id
-                     #:with val (syntax-local-value #'foo)
-                     (syntax/loc this-syntax 'val)])
-                  bar)
-                'default)
-  (check-expect (let ()
-                  (define-syntax ((foo _arg #:kw-arg _kw-arg)
-                                  [_opt-arg #f]
-                                  #:opt-kw-arg [_opt-kw-arg #f])
-                    'default)
-                  (define-set!-syntax ((foo _arg #:kw-arg _kw-arg)
-                                       [_opt-arg #f]
-                                       #:opt-kw-arg [_opt-kw-arg #f])
-                    'set!)
-                  (define-syntax-parser bar
-                    [_:id
-                     #:do [(define proc (syntax-local-value #'foo))]
-                     #:with val ((proc 'arg #:kw-arg 'kw-arg)
-                                 'opt-arg #:opt-kw-arg 'opt-kw-arg)
-                     (syntax/loc this-syntax 'val)])
-                  bar)
-                'default))
+(describe "set!-pack"
+  (context "given syntaxes"
+    (it "packs them"
+      (check-type syntax?
+        (set!-pack #'getter #'setter #'preamble1 #'preamble2))))
+  (context "given non syntax"
+    (it "raises a contract violation"
+      (check-raise exn:fail:contract
+        (set!-pack 'non-stx #'setter #'preamble1 #'preamble2))
+      (check-raise exn:fail:contract
+        (set!-pack #'getter 'non-stx #'preamble1 #'preamble2))
+      (check-raise exn:fail:contract
+        (set!-pack #'getter #'setter 'non-stx #'preamble2))
+      (check-raise exn:fail:contract
+        (set!-pack #'getter #'setter #'preamble1 'non-stx))))
+  (context "given non arity"
+    (it "raises a contract violation"
+      (define (check non-arity)
+        (check-raise exn:fail:contract
+          (set!-pack #'getter #'setter #'preamble1 #'preamble2
+                     #:arity non-arity)))
+      (check 'non-arity)
+      (check "1")))
+  (context "given non source location"
+    (it "raises a contract violation"
+      (define (check non-srcloc)
+        (check-raise exn:fail:contract
+          (set!-pack #'getter #'setter #'preamble1 #'preamble2
+                     #:source non-srcloc)))
+      (check 'non-srcloc)
+      (check (srcloc 'non-srcloc 1 #f 1 0)))))
 
-(test-case "define-set!-syntaxes"
-  (check-expect (let ()
-                  (define-syntaxes (foo bar)
-                    (values 'default 'default))
-                  (define-set!-syntaxes (foo bar)
-                    (values 'set! 'set!))
-                  (define-syntax-parser baz
-                    [_:id
-                     #:with val-foo (syntax-local-value #'foo)
-                     #:with val-bar (syntax-local-value #'bar)
-                     (syntax/loc this-syntax '(val-foo val-bar))])
-                  baz)
-                '(default default)))
+(define-for-syntax (make-dummy-expander val-id)
+  (syntax-parser
+    [(_:id)
+     #:with val val-id
+     (set!-pack #'(lambda () val)
+                #'(lambda (_val) (set! val 'set)))]
+    [who:id (syntax/loc this-syntax (who))]))
 
-(test-case "set!-pack"
-  (check-expect (set!-pack #'getter #'setter #'preamble1 #'preamble2)
-                (expect-pred syntax?))
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (set!-pack 'not-stx #'setter #'preamble1 #'preamble2)))
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (set!-pack #'getter 'not-stx #'preamble1 #'preamble2)))
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (set!-pack #'getter #'setter 'not-stx #'preamble2)))
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (set!-pack #'getter #'setter #'preamble1 'not-stx)))
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (set!-pack #'getter #'setter #'preamble1 #'preamble2
-                 #:arity 'not-nonneg-int)))
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (set!-pack #'getter #'setter #'preamble1 #'preamble2
-                 #:source 'not-srcloc))))
+(define-for-syntax (make-dummy-struct trans)
+  (struct dummy ()
+    #:property prop:set!-expander (lambda (_dummy) trans))
+  (dummy))
 
-(test-case "prop:set!-expander"
-  (check-expect (let ([val 'init])
-                  (set! bar 'ignored)
-                  (define-set!-syntax bar
-                    (let ()
-                      (define (expand _foo)
-                        (syntax-parser
-                          [(_:id) (set!-pack #'(lambda () val)
-                                             #'(lambda (_val)
-                                                 (set! val 'set)))]
-                          [who:id (syntax/loc this-syntax (who))]))
-                      (struct foo ()
-                        #:property prop:set!-expander expand)
-                      (foo)))
-                  val)
-                'set)
-  (check-expect #'(let ()
-                    (set! bar 'ignored)
-                    (define-set!-syntax bar
-                      (let ()
-                        (define ((expand _foo) _stx) 'not-stx)
-                        (struct foo ()
-                          #:property prop:set!-expander expand)
-                        (foo)))
-                    'unreached)
-                expect-expand-contract-exn))
+(define-for-syntax (broken-expander _args) 'not-stx)
 
-(test-case "make-set!-expander"
-  (check-expect (let ([val 'init])
-                  (set! foo 'ignored)
-                  (define-set!-syntax foo
-                    (make-set!-expander
-                     (syntax-parser
-                       [(_:id) (set!-pack #'(lambda () val)
-                                          #'(lambda (_val)
-                                              (set! val 'set)))]
-                       [who:id (syntax/loc this-syntax (who))])))
-                  val)
-                'set)
-  (check-expect #'(let ()
-                    (set! foo 'ignored)
-                    (define-set!-syntax foo
-                      (make-set!-expander (lambda (_stx) 'not-stx)))
-                    'unreached)
-                expect-expand-contract-exn))
+(describe "prop:set!-expander"
+  (context "given a set! expander struct"
+    (it "produces a set! expander"
+      (define val 'init)
+      (call! values val-ref)
+      (define-set!-syntax val-ref
+        (make-dummy-struct (make-dummy-expander #'val)))
+      (check-value 'set val)))
+  (context "given a non set! expander struct"
+    (it "raises a contract violation"
+      (define-syntax-parser check
+        [(_:id trans:expr)
+         (syntax/loc this-syntax
+           (check-expand exn:fail:contract
+             (define-set!-syntax non-ref (make-dummy-struct trans))
+             (call! values non-ref)))])
+      (check 'non-trans)
+      (check (procedure-reduce-arity (lambda _args #'stx)
+                                     (list 0 (arity-at-least 2))))
+      (check broken-expander))))
 
-(test-case "make-set!-functional"
-  (check-expect (let ([val 'init])
-                  (set! (foo) 'ignored)
-                  (define-set!-syntax foo
-                    (make-set!-functional
-                     #'(lambda () (values))
-                     #'(lambda (_val) (set! val 'set))))
-                  val)
-                'set)
-  (check-expect (let ([val 'init])
-                  (set! (foo) (values))
-                  (define-set!-syntax foo
-                    (make-set!-functional
-                     #'(lambda () (values))
-                     #'(lambda () (set! val 'set))
-                     #:arity 0))
-                  val)
-                'set)
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (make-set!-functional 'not-stx #'setter)))
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (make-set!-functional #'getter 'not-stx)))
-  (check-exn exn:fail:contract?
-    (lambda ()
-      (make-set!-functional #'getter #'setter
-                            #:arity 'not-nonneg-int))))
+(describe "make-set!-expander"
+  (context "given a transformer"
+    (it "produces a set! expander"
+      (define val 'init)
+      (call! values val-ref)
+      (define-set!-syntax val-ref
+        (make-set!-expander (make-dummy-expander #'val)))
+      (check-value 'set val)))
+  (context "given a non transformer"
+    (it "raises a contract violation"
+      (define (check non-trans)
+        (check-raise exn:fail:contract
+          (make-set!-expander non-trans)))
+      (check 'non-trans)
+      (check (procedure-reduce-arity (lambda _args #'stx)
+                                     (list 0 (arity-at-least 2))))
+      (check-expand exn:fail:contract
+        (define-set!-syntax non-ref
+          (make-set!-expander broken-expander))
+        (call! values non-ref)))))
 
-(test-case "gref"
-  (check-expect (let ()
-                  (define-set!-syntax foo
-                    (make-set!-expander
-                     (syntax-parser
-                       [_:id (set!-pack #'getter #'setter
-                                        #'preamble1 #'preamble2
-                                        #:arity 0)])))
-                  (define-syntax-parser bar
-                    [(_:id (~var ref (gref #:arity 0)))
-                     (syntax/loc this-syntax
-                       '(ref.getter ref.setter ref.preamble ...))])
-                  (bar foo))
-                '(getter setter preamble1 preamble2))
-  (check-expect #'(let ()
-                    (bar foo)
-                    (define-set!-syntax foo
-                      (make-set!-expander
-                       (syntax-parser
-                         [_:id (set!-pack #'getter #'setter
-                                          #'preamble1 #'preamble2
-                                          #:arity 0)])))
-                    (define-syntax-parser bar
-                      [(_:id _:gref) #''no-exn])
-                    'unreached)
-                expect-expand-syntax-exn))
+(describe "make-set!-functional"
+  (context "given syntaxes"
+    (it "produces a set! expander"
+      (define val 'init)
+      (call! values (val-ref))
+      (define-set!-syntax val-ref
+        (make-set!-functional #'(lambda () val)
+                              #'(lambda (_val) (set! val 'set))))
+      (check-value val 'set)))
+  (context "given syntaxes and arity"
+    (it "produces a set! expander"
+      (define val1 'init)
+      (define val2 'init)
+      (define (vals-ref) (values val1 val2))
+      (shift! (vals-ref) (vals-ref))
+      (define-set!-syntax vals-ref
+        (make-set!-functional
+         #'vals-ref
+         #'(lambda (_val1 _val2)
+             (set!-values (val1 val2) (values 'set 'set)))
+         #:arity 2))
+      (check-values ('set 'set) (values val1 val2))))
+  (context "given non syntax"
+    (it "raises a contract violation"
+      (check-raise exn:fail:contract
+        (make-set!-functional 'not-stx #'setter))
+      (check-raise exn:fail:contract
+        (make-set!-functional #'getter 'not-stx))))
+  (context "given non arity"
+    (it "raises a contract violation"
+      (define (check non-arity)
+        (check-raise exn:fail:contract
+          (make-set!-functional #'getter #'setter
+                                #:arity non-arity)))
+      (check 'non-arity)
+      (check "1"))))
 
-(test-case "generalized-reference"
-  (check-expect #'generalized-reference
-                (expect-compare free-identifier=? #'gref)))
+(define-set!-syntax dummy-ref
+  (make-set!-expander
+   (syntax-parser
+     [_ (set!-pack #'getter #'setter #'preamble1 #'preamble2
+                   #:arity 0)])))
 
-(test-case "get-set!-expansion"
-  (check-expect (let ()
-                  (define-set!-syntax foo
-                    (make-set!-expander
-                     (syntax-parser
-                       [_:id (set!-pack #'getter #'setter
-                                        #'preamble1 #'preamble2
-                                        #:arity 0)])))
-                  (define-syntax-parser bar
-                    [(_:id ref)
-                     (define-values (_arity getter setter preambles)
-                       (get-set!-expansion #'ref #:arity 0))
-                     (quasisyntax/loc this-syntax
-                       '(#,getter #,setter #,@preambles))])
-                  (bar foo))
-                '(getter setter preamble1 preamble2))
-  (check-expect #'(let ()
-                    (define-syntax (foo _stx)
-                      (get-set!-expansion 'not-stx)
-                      #''unreached)
-                    (foo))
-                expect-expand-contract-exn)
-  (check-expect #'(let ()
-                    (define-syntax (foo _stx)
-                      (get-set!-expansion #'foo -1)
-                      #''unreached)
-                    (foo))
-                expect-expand-contract-exn))
+(describe "gref"
+  (it "matches a reference with expected arity"
+    (define-syntax-parser get-ref
+      [(_:id ref)
+       #:declare ref (gref #:arity 0)
+       (syntax/loc this-syntax
+         (values 'ref.getter 'ref.setter '(ref.preamble ...)))])
+    (check-values ('getter 'setter '(preamble1 preamble2))
+      (get-ref dummy-ref)))
+  (it "does not match a reference with unexpected arity"
+    (check-expand exn:fail:syntax
+      (define-syntax-parser get-ref
+        [(_:id _:gref) #''ignored])
+      (get-ref dummy-ref))))
+
+(describe "generalized-reference"
+  (it "is an alias of gref"
+    (local-require expect)
+    (check-value (expect-compare free-identifier=? #'gref)
+      #'generalized-reference)))
+
+(describe "get-set!-expansion"
+  (context "given a syntax"
+    (it "matches a reference with expected arity"
+      (define-syntax-parser get-ref
+        [(_:id ref)
+         (define-values (_arity getter setter preambles)
+           (get-set!-expansion #'dummy-ref #:arity 0))
+         (quasisyntax/loc this-syntax
+           (values '#,getter '#,setter '#,preambles))])
+      (check-values ('getter 'setter '(preamble1 preamble2))
+        (get-ref dummy-ref)))
+    (it "does not match a reference with unexpected arity"
+      (check-expand exn:fail:syntax
+        (define-syntax-parser get-ref
+          [(_:id ref)
+           (get-set!-expansion #'dummy-ref)
+           #''ignored])
+        (get-ref dummy-ref))))
+  (context "given a non syntax"
+    (it "raises a contract violation"
+      (check-raise exn:fail:contract
+        (get-set!-expansion 'non-stx))))
+  (context "given a non arity"
+    (it "raises a contract violation"
+      (define (check non-arity)
+        (check-raise exn:fail:contract
+          (get-set!-expansion #'dummy-ref #:arity non-arity)))
+      (check 'non-arity)
+      (check "1"))))

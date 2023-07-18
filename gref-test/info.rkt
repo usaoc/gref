@@ -9,7 +9,7 @@
 (define collection 'multi)
 (define build-deps
   '("base"
-    "doc-coverage" "expect" "rackunit-lib"
+    "doc-coverage" "expect" "rackunit-lib" "rackunit-spec"
     "gref-doc" "gref-lib"))
 (define pkg-authors '("whmunkchan@outlook.com"))
 (define pkg-desc "Tests for \"gref\"")

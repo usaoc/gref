@@ -6,6 +6,15 @@
 ;; the copyright notice and this notice are preserved.  This file is
 ;; offered as-is, without any warranty.
 
-(require doc-coverage gref)
-(check-all-documented 'gref/base)
-(check-all-documented 'gref/syntax)
+(require doc-coverage
+         rackunit/spec)
+
+(describe "gref/base"
+  (it "is fully documented"
+    (local-require gref/base)
+    (check-all-documented 'gref/base)))
+
+(describe "gref/syntax"
+  (it "is fully documented"
+    (local-require gref/syntax)
+    (check-all-documented 'gref/syntax)))
