@@ -18,6 +18,7 @@
 (require gref/base
          gref/syntax
          rackunit/spec
+         syntax/parse
          syntax/parse/define
          tests/gref/helper
          (for-syntax racket/base
@@ -199,19 +200,42 @@
                    #:arity 0)])))
 
 (describe "gref"
-  (it "matches a reference with expected arity"
-    (define-syntax-parser get-ref
-      [(_:id ref)
-       #:declare ref (gref #:arity 0)
-       (syntax/loc this-syntax
-         (values 'ref.getter 'ref.setter '(ref.preamble ...)))])
-    (check-values ('getter 'setter '(preamble1 preamble2))
-      (get-ref dummy-ref)))
-  (it "does not match a reference with unexpected arity"
-    (check-expand exn:fail:syntax
+  (context "given an arity"
+    (it "matches a reference with expected arity"
       (define-syntax-parser get-ref
-        [(_:id _:gref) #''ignored])
-      (get-ref dummy-ref))))
+        [(_:id ref)
+         #:declare ref (gref #:arity 0)
+         (syntax/loc this-syntax
+           (values 'ref.getter 'ref.setter '(ref.preamble ...)))])
+      (check-values ('getter 'setter '(preamble1 preamble2))
+        (get-ref dummy-ref)))
+    (it "does not match a reference with unexpected arity"
+      (check-expand exn:fail:syntax
+        (define-syntax-parser get-ref
+          [(_:id _:gref) #''ignored])
+        (get-ref dummy-ref))))
+  (context "given a non arity"
+    (it "raises a contract violation"
+      (define-syntax-parser check
+        [(_:id non-arity:expr)
+         (syntax/loc this-syntax
+           (check-expand exn:fail:contract
+             (define-syntax-parser fail
+               [_:id
+                #:with ref #'dummy-ref
+                #:declare ref (gref #:arity non-arity)
+                #''ignored])
+             fail))])
+      (check 'non-arity)
+      (check "1")))
+  (context "called when not expanding"
+    (it "does not match anything"
+      (check-raise exn:fail:syntax
+        (syntax-parse #''ignored
+          [_
+           #:with ref #'dummy-ref
+           #:declare ref (gref #:arity #f)
+           #''ignored])))))
 
 (describe "generalized-reference"
   (it "is an alias of gref"
@@ -239,12 +263,26 @@
         (get-ref dummy-ref))))
   (context "given a non syntax"
     (it "raises a contract violation"
-      (check-raise exn:fail:contract
-        (get-set!-expansion 'non-stx))))
+      (check-expand exn:fail:contract
+        (define-syntax-parser fail
+          [_:id
+           (get-set!-expansion 'non-stx)
+           #''ignored])
+        fail)))
   (context "given a non arity"
     (it "raises a contract violation"
-      (define (check non-arity)
-        (check-raise exn:fail:contract
-          (get-set!-expansion #'dummy-ref #:arity non-arity)))
+      (define-syntax-parser check
+        [(_:id non-arity:expr)
+         (syntax/loc this-syntax
+           (check-expand exn:fail:contract
+             (define-syntax-parser fail
+               [_:id
+                (get-set!-expansion #'dummy-ref #:arity non-arity)
+                #''ignored])
+             fail))])
       (check 'non-arity)
-      (check "1"))))
+      (check "1")))
+  (context "called when not expanding"
+    (it "raises a contract violation"
+      (check-raise exn:fail:contract
+        (get-set!-expansion #'dummy-ref #:arity #f)))))

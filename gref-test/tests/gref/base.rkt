@@ -84,7 +84,7 @@
       (define table (make-hasheq))
       (define (check non-fail-res)
         (check-raise exn:fail:contract
-          (call! values (hash-ref table 'ignored non-fail-res))))
+          (shift! (hash-ref table 'ignored non-fail-res) 'ignored)))
       (check (lambda _args (values)))
       (check (procedure-reduce-arity (lambda _args 'ignored)
                                      (arity-at-least 1)))))
