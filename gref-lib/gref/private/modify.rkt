@@ -65,8 +65,9 @@
   (define-template-metafunction bind+calls
     (syntax-parser
       [(_ vals (proc _)) (syntax/loc this-syntax (proc vals))]
-      [(_ vals . (~or* ((~and (~parse (val ...) '())
-                              (~parse call0 #'(void))))
+      [(_ vals . (~or* (~and ()
+                             (~parse (val ...) '())
+                             (~parse call0 #'(void)))
                        ((~and (_ val ...) call0))
                        ((~and (_ val) call) ...)))
        (syntax/loc this-syntax
@@ -189,12 +190,10 @@
     #:description "rest argument"
     #:commit
     #:attributes (app expr val)
-    (pattern () #:with app #'#%app #:attr val #f #:attr expr #f)
-    (pattern _
-      #:cut
-      #:with expr:expr this-syntax
-      #:with app #'apply
-      #:with val #'rest-arg)))
+    (pattern (~or* (~and () (~parse app #'#%app))
+                   (~and expr:expr
+                         (~parse app #'apply)
+                         (~parse val #'rest-arg))))))
 
 (define-syntax-parser define-call!
   [(_:id name:id arity:exact-nonnegative-integer)
