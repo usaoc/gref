@@ -20,9 +20,10 @@
 (require racket/string)
 
 (define (lib-path path)
-  `(lib ,(string-append
-          path
-          (if (string-contains? path "/") ".scrbl" "/main.scrbl"))))
+  (define ext ".scrbl")
+  `(lib ,(if (string-contains? path "/")
+             (string-append-immutable path ext)
+             (string-append-immutable path "/main" ext))))
 
 (define rkt-guide (lib-path "scribblings/guide/guide"))
 

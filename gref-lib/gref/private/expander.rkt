@@ -55,7 +55,7 @@
 (define-set!-parser values
   [(who:id . ref:%grefs)
    #:do [(define arity (length (syntax->list #'ref)))]
-   #:with (val ...) (format-ids "val~a" arity)
+   #:with (val ...) (make-vals arity)
    (define namer (make-namer #'who))
    (apply set!-pack
           (namer #'(lambda () (values (ref.getter) ...)))

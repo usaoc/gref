@@ -78,7 +78,7 @@
     #:description "set! assignment pair"
     #:attributes ([val 1] vals setter [preamble 1])
     (pattern (~seq (~var || (%gref #:arity #f)) vals:expr)
-      #:with (val ...) (format-ids "val~a" (datum arity)))))
+      #:with (val ...) (make-vals (datum arity)))))
 
 (define-modify-parser set!
   [(_:id pair:set!-pair ...+)
@@ -96,7 +96,7 @@
     #:attributes ([val 1] vals [setter 1] [preamble 2])
     (pattern (~seq (~and :%grefs ref) vals:expr)
       #:do [(define arity (length (syntax->list #'ref)))]
-      #:with (val ...) (format-ids "val~a" arity))))
+      #:with (val ...) (make-vals arity))))
 
 (define-modify-parser set!-values
   [(_:id pair:set!-values-pair ...+)
@@ -165,7 +165,7 @@
    #:with ref (datum (maybe-ref ...))
    #:declare ref (%grefs #:arity arity)
    #:with vals:expr #'maybe-vals
-   #:with (val ...) (format-ids "val~a" arity)
+   #:with (val ...) (make-vals arity)
    (syntax/loc this-syntax
      (shift!-fold ((ref0.preamble ...) (ref.preamble ...) ...)
                   (ref0.getter) ((ref.getter) ... vals)
@@ -179,7 +179,7 @@
    #:do [(define arity (datum ref0.arity))]
    #:with ref (datum (maybe-ref ...))
    #:declare ref (%grefs #:arity arity)
-   #:with (val ...) (format-ids "val~a" arity)
+   #:with (val ...) (make-vals arity)
    (syntax/loc this-syntax
      (shift!-fold ((ref0.preamble ...) (ref.preamble ...) ...)
                   (void) ((ref.getter) ... (ref0.getter))
@@ -198,14 +198,13 @@
 (define-syntax-parser define-call!
   [(_:id name:id arity:exact-nonnegative-integer)
    #:do [(define arity-num (syntax-e #'arity))]
-   #:with (arg0 ...) (format-ids "arg~a" arity-num)
-   #:with (arg0-expr ...) (format-ids "arg~a-expr" arity-num)
+   #:with (arg0 ...) (make-ids "arg" arity-num)
+   #:with (arg-expr0 ...) (make-ids "arg-expr" arity-num)
    #:with more-idx (datum->syntax #'here (add1 arity-num) #'arity)
    (syntax/loc this-syntax
      (define-modify-parser name
-       [(_:id proc-expr:expr arg0-expr ... ref:%gref
+       [(_:id proc-expr:expr (~var arg-expr0 expr) ... ref:%gref
               maybe-arg (... ...) . maybe-rest)
-        (~@ #:declare arg0-expr expr) ...
         #:cut
         #:with arg (syntax/loc this-syntax (maybe-arg (... ...)))
         #:declare arg (args more-idx)
@@ -214,7 +213,7 @@
           (begin
             (let ()
               (define proc proc-expr)
-              (define arg0 arg0-expr) ...
+              (define arg0 arg-expr0) ...
               ref.preamble (... ...)
               (define arg.val arg.expr) (... ...)
               (... (~? (define rest.val rest.expr)))

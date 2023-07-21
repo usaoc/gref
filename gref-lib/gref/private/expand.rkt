@@ -83,22 +83,24 @@ identifier with transformer binding (possibly in gref/set! space)"
                    . preambles)
   (datum->syntax #f (set!-packed num getter setter preambles) src))
 
-(define (make-set!-functional getter setter #:arity [num 1])
+(define (make-set!-functional getter-stx setter-stx #:arity [num 1])
   (define (pack getter setter preambles)
     (datum->syntax #f (set!-packed num getter setter preambles)))
-  (define vals (format-ids "val~a" num))
+  (define/syntax-parse getter getter-stx)
+  (define/syntax-parse setter setter-stx)
+  (define/syntax-parse (val ...) (make-vals num))
   (make-set!-expander
    (syntax-parser
      [(who:id . arg)
       #:declare arg (args 0)
-      #:with (val ...) vals
       (define namer (make-namer #'who))
-      (pack (namer #`(lambda () (#,getter arg.val ...)))
-            (namer #`(lambda (val ...)
-                       (#,setter arg.val ... val ...)))
-            (for/list ([val (in-list (datum (arg.val ...)))]
-                       [expr (in-list (datum (arg.expr ...)))])
-              #`(define #,val #,expr)))])))
+      (pack (namer #'(lambda () (getter arg.val ...)))
+            (namer #'(lambda (val ...) (setter arg.val ... val ...)))
+            (for/list ([val-id (in-list (datum (arg.val ...)))]
+                       [expr-stx (in-list (datum (arg.expr ...)))])
+              (define/syntax-parse val val-id)
+              (define/syntax-parse expr expr-stx)
+              #'(define val expr)))])))
 
 (define-syntax-class (set!-packed-form val track+intro)
   #:description "set!-packed form"

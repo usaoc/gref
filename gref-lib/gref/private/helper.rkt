@@ -15,25 +15,43 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide format-ids make-namer args maybe-expr/c)
+(provide make-ids make-vals make-namer args maybe-expr/c)
 
 (require racket/keyword
-         racket/syntax
          syntax/datum
          syntax/parse
          (for-template racket/base))
 
-(define fmt-table (make-hash))
+(define (indexed-id pfix idx #:source src)
+  (define indexed (string-append-immutable pfix (number->string idx)))
+  (datum->syntax #'here (string->symbol indexed) src))
 
-(define (format-ids fmt end)
-  (define (make-ids)
-    (for/list ([idx (in-range end)])
-      (format-id #'here fmt idx #:source #'here)))
-  (hash-ref! (hash-ref! fmt-table fmt make-hasheqv) end make-ids))
+(define (make-ids pfix end)
+  (for/list ([idx (in-range end)])
+    (indexed-id pfix idx #:source #'here)))
+
+(define vals-table (make-hasheqv))
+
+(define (make-vals end)
+  (hash-ref! vals-table end (lambda () (make-ids "val" end))))
 
 (define (make-namer name-id)
   (define name (syntax-e name-id))
   (lambda (stx) (syntax-property stx 'inferred-name name)))
+
+(define args-table (make-hash))
+
+(define (make-args kw+idxs)
+  (for/fold ([args '()])
+            ([kw/idx (in-list kw+idxs)])
+    (define arg
+      (cond
+        [(keyword? kw/idx)
+         (define sym
+           (string->symbol (keyword->immutable-string kw/idx)))
+         (datum->syntax #'here sym #'here)]
+        [else (indexed-id "arg" kw/idx #:source #'here)]))
+    (cons arg args)))
 
 (define-syntax-class (args idx)
   #:description "#%app arguments"
@@ -55,24 +73,18 @@
                                   #f]))
               kw))]
     #:fail-when (find-dup) "duplicate keyword"
-    #:do [(define vals
-            (for/fold ([vals '()]
+    #:do [(define kw+idxs
+            (for/fold ([kw+idxs '()]
                        [idx idx]
-                       #:result (reverse vals))
-                      ([expr (in-list (datum (expr ...)))]
-                       [kw (in-list (datum (kw ...)))])
-              (define (next val idx) (values (cons val vals) idx))
-              (cond
-                [kw
-                 (define (keyword->symbol kw)
-                   (string->symbol (keyword->immutable-string kw)))
-                 (define sym (keyword->symbol (syntax-e kw)))
-                 (next (datum->syntax #'here sym expr) idx)]
-                [else
-                 (define id
-                   (format-id #'here "arg~a" idx #:source expr))
-                 (next id (add1 idx))])))]
-    #:with (val ...) vals))
+                       #:result kw+idxs)
+                      ([kw (in-list (datum (kw ...)))])
+              (define-values (kw/idx next-idx)
+                (if kw
+                    (values (syntax-e kw) idx)
+                    (values idx (add1 idx))))
+              (values (cons kw/idx kw+idxs) next-idx)))]
+    #:with (val ...) (hash-ref! args-table kw+idxs
+                                (lambda () (make-args kw+idxs)))))
 
 (define-syntax-class (maybe-expr/c contract-expr)
   #:commit

@@ -28,15 +28,13 @@
     #:commit
     #:attributes (inc)
     (pattern _:id
-      #:with path (datum->syntax
-                   #f
-                   (string-append "scribblings/gref/"
-                                  (symbol->immutable-string
-                                   (syntax-e this-syntax))
-                                  ".scrbl")
-                   #'here)
-      #:with mod (syntax/loc this-syntax (lib path))
-      #:with inc (syntax/loc out (include-section mod)))))
+      #:do [(define sub-path
+              (symbol->immutable-string (syntax-e this-syntax)))
+            (define full-path
+              (string-append-immutable "scribblings/gref/"
+                                       sub-path ".scrbl"))]
+      #:with path (datum->syntax #f full-path #'here)
+      #:with inc (syntax/loc out (include-section (lib path))))))
 
 (define-syntax-parser include/gref
   [(_:id mod ...+)
