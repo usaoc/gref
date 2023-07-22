@@ -27,9 +27,9 @@
 
 @title[#:tag "expander"]{@racket[set!] Expanders}
 
-The provided @tech{@racket[set!] expanders} are defined through
-@racket[define-set!-syntax] and @racket[make-set!-expander].  All
-documented @tech{@racket[set!] expanders} preserve the apparent
+The @racket[provide]d @tech{@racket[set!] expanders} are defined
+through @racket[define-set!-syntax] and @racket[make-set!-expander].
+All documented @tech{@racket[set!] expanders} preserve the apparent
 @tech/rep{order} of the sub-expressions and accordingly validate the
 results.  When an inapproapriate result is detected, the
 @racket[exn:fail:contract] exception is @racket[raise]d.
@@ -47,7 +47,7 @@ positions of @tech{@racket[set!] expanders} and @tech{modify macros}
 where a @tech/rep{reference} is explicitly required.  All documented
 @tech{@racket[set!] expanders} extend the base Racket procedures, and
 thus @tech[#:doc rkt-ref]{shadow} the corresponding bindings in the
-@tech[#:doc rkt-ref]{default binding space} as provided by
+@tech[#:doc rkt-ref]{default binding space} as @racket[provide]d by
 @racketmodname[racket/base].
 
 @defset![(set! (values ref ...) vals)

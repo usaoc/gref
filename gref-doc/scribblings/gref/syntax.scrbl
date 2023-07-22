@@ -20,11 +20,11 @@
           scribblings/gref/lib
           scribblings/gref/tech
           (for-label gref/syntax
-                     racket/base
                      racket/contract
                      syntax/parse
                      syntax/srcloc
-                     syntax/transformer))
+                     syntax/transformer
+                     (except-in racket/base ...)))
 
 @title[#:tag "syntax"]{The Syntax Module}
 
@@ -101,14 +101,14 @@ extensions.
  Returns an implementation of @racket[prop:set!-expander] that
  @tech/rep{expands} @deftech{functional forms}.  A
  @tech{functional form} with the shape @racket[(_who _arg ...)] where
- @var[who] is bound to the resulting implementation will be
- @tech/rep{expanded} such that:
+ @var[who]'s @tech[#:doc rkt-guide]{transformer binding} is the
+ resulting implementation will be @tech/rep{expanded} such that:
 
  @itemlist[
  @item{Each expression in @var[arg] is evaluated in the apparent
    @tech/rep{order} and bound to @var[arg-val];}
- @item{A sequence of @racket[number] identifiers @racket[_val ...] is
-   generated;}
+ @item{A sequence of @racket[number] @tech[#:doc rkt-ref]{identifiers}
+   @racket[_val ...] is generated;}
  @item{The expressions @racket[(lambda () (getter _arg-val ...))] and
    @racket[(lambda (_val ...) (setter _arg-val ... _val ...))] are
    used as the @tech/rep{getter} and @tech/rep{setter}.}]

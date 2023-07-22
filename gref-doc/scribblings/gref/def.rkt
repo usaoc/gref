@@ -105,7 +105,7 @@
      (nested #:style "leftindent" (deftogether [def ...] pre ...)))])
 
 (define provided-for-syntax
-  (list (smaller "Provided " (racket for-syntax) ".") "\n" "\n"))
+  (list (smaller "Exported " (racket for-syntax) ".") "\n" "\n"))
 
 (define-syntax-parser racket/set!
   [(_:id form)
