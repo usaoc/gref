@@ -23,46 +23,46 @@
          scribble/manual
          syntax/parse/define
          (for-syntax racket/base
-                     racket/syntax
-                     racket/string))
+                     racket/string
+                     racket/syntax))
 
 (define-syntax-parser make-table
-  [(_:id (~seq fn:expr hash:expr) ...)
-   #:do [(define fn+table
-           (syntax-local-eval #'(hasheq (~@ fn hash) ...)))
+  [(_:id (~seq left+rights:expr fn:expr) ...)
+   #:do [(define left+rights/fn
+           (syntax-local-eval #'(hasheq (~@ left+rights fn) ...)))
          (define table
-           (for*/hash ([(fn table) (in-hash fn+table)]
-                       [(left rights) (in-hash table)]
-                       [(right) (in-list rights)])
+           (for*/hash ([(left+rights fn) (in-hash left+rights/fn)]
+                       [(lefts rights) (in-hash left+rights)]
+                       [left (in-list lefts)]
+                       [right (in-list rights)])
              (fn left right)))]
    (datum->syntax #'here table this-syntax)])
 
 (define table
   (make-table
-   (lambda (base suffix)
+   #hasheq((("expand") . ("ded" "sion")))
+   (lambda (base sfix)
      (define root (string-trim base "d" #:left? #f))
-     (values (string-append-immutable root suffix) base))
-   #hasheq(("expand" . ("ded" "sion")))
-   (lambda (base suffix)
+     (values (string-append-immutable root sfix) base))
+   #hasheq((("access") . ("es"))
+           (("store") . ("ed" "ing"))
+           (("value" "visit") . ("ed")))
+   (lambda (base sfix)
      (define root (string-trim base "e" #:left? #f))
-     (values (string-append-immutable root suffix) base))
-   #hasheq(("access" . ("es"))
-           ("store" . ("ed" "ing"))
-           ("value" . ("ed"))
-           ("visit" . ("ed")))
-   (lambda (abbrev prefix)
-     (values abbrev (string-append-immutable prefix "reference")))
-   #hasheq(("optic" . ("functional "))
-           ("place" . ("generalized ")))
-   (lambda (prefix abbrev)
-     (values abbrev (string-append-immutable prefix abbrev)))
-   #hasheq(("evaluation " . ("order"))
-           ("generalized " . ("reference")))
-   (lambda (suffix abbrev)
-     (values abbrev (string-append-immutable abbrev suffix)))
-   #hasheq((" form" . ("preamble"))
-           (" number" . ("arity"))
-           (" procedure" . ("getter" "setter")))))
+     (values (string-append-immutable root sfix) base))
+   #hasheq((("functional") . ("optic"))
+           (("generalized") . ("place")))
+   (lambda (pfix abbr)
+     (values abbr (string-append-immutable pfix " reference")))
+   #hasheq((("evaluation") . ("order"))
+           (("generalized") . ("reference")))
+   (lambda (pfix abbr)
+     (values abbr (string-append-immutable pfix " " abbr)))
+   #hasheq((("preamble") . ("form"))
+           (("arity") . ("number"))
+           (("getter" "setter") . ("procedure")))
+   (lambda (abbr sfix)
+     (values abbr (string-append-immutable abbr " " sfix)))))
 
 (define ((make-tech/rep tech) . pres)
   (define cont (decode-content pres))
