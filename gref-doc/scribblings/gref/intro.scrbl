@@ -61,9 +61,9 @@ For a detailed discussion on the history of
 focuses on the technical aspects of @tech{generalized references}.
 
 The simplest implementation of @tech{generalized references} is as in
-@deftech{@hyperlink[@collection-file-path["srfi-17.html" "srfi" "scribblings" "srfi-std"]]{SRFI 17}},
-resembling the original proposal by @citet[lisp-mac] to an extent.
-That is, a @tech{getter procedure} can be associated with a
+@deftech{@seclink[#:doc srfi "srfi-17"]{SRFI 17}}, resembling the
+original proposal by @citet[lisp-mac] to an extent.  That is, a
+@tech{getter procedure} can be associated with a
 @tech{setter procedure}, where
 
 @racketblock[(_proc _arg ...)]

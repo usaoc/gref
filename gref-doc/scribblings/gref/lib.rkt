@@ -15,18 +15,27 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide lib-path rkt-guide rkt-ref stx-parse)
+(provide lib-path rkt-guide rkt-ref srfi stx-parse)
 
-(require racket/string)
+(require syntax/parse/define
+         (for-syntax racket/base
+                     racket/string))
 
-(define (lib-path path)
-  (define ext ".scrbl")
-  `(lib ,(if (string-contains? path "/")
-             (string-append-immutable path ext)
-             (string-append-immutable path "/main" ext))))
+(define-syntax-parser lib-path
+  [(_:id path:str)
+   #:do [(define ext ".scrbl")
+         (define path-str (syntax-e #'path))
+         (define full-path-str
+           (if (string-contains? path-str "/")
+               (string-append-immutable path-str ext)
+               (string-append-immutable path-str "/main" ext)))]
+   #:with full-path (datum->syntax #f full-path-str #'here)
+   (syntax/loc this-syntax '(lib full-path))])
 
 (define rkt-guide (lib-path "scribblings/guide/guide"))
 
 (define rkt-ref (lib-path "scribblings/reference/reference"))
+
+(define srfi (lib-path "srfi/scribblings/srfi"))
 
 (define stx-parse (lib-path "syntax/scribblings/syntax"))
