@@ -45,7 +45,8 @@
 
 (define-syntax-parser define-set!-expander
   [(_:id name:id proc:expr)
-   #'(define-set!-syntax name (make-set!-expander proc))])
+   (syntax/loc this-syntax
+     (define-set!-syntax name (make-set!-expander proc)))])
 
 (define-syntax-parser define-set!-parser
   [(_:id name:id . tail)
