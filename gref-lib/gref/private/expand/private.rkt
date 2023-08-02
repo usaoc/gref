@@ -15,8 +15,7 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide get-set!-expansion gref set!-pack make-set!-functional
-         %gref %grefs)
+(provide make-gref-desc set!-pack gref grefs)
 
 (require gref/private/helper
          gref/private/property
@@ -77,25 +76,6 @@ identifier with transformer binding (possibly in gref/set! space)"
                    . preambles)
   (datum->syntax #f (set!-packed num getter setter preambles) src))
 
-(define (make-set!-functional getter-stx setter-stx #:arity [num 1])
-  (define (pack getter setter preambles)
-    (datum->syntax #f (set!-packed num getter setter preambles)))
-  (define/syntax-parse getter getter-stx)
-  (define/syntax-parse setter setter-stx)
-  (define/syntax-parse (val ...) (make-vals num))
-  (make-set!-expander
-   (syntax-parser
-     [(who:id . arg)
-      #:declare arg (args 0)
-      (define namer (make-namer #'who))
-      (pack (namer #'(lambda () (getter arg.val ...)))
-            (namer #'(lambda (val ...) (setter arg.val ... val ...)))
-            (for/list ([val-id (in-list (datum (arg.val ...)))]
-                       [expr-stx (in-list (datum (arg.expr ...)))])
-              (define/syntax-parse val val-id)
-              (define/syntax-parse expr expr-stx)
-              #'(define val expr)))])))
-
 (define-syntax-class (set!-packed-form val track+intro)
   #:description "set!-packed form"
   #:commit
@@ -111,7 +91,7 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:with setter (track+intro setter)
     #:with (preamble ...) (map track+intro preambles)))
 
-(define-syntax-class (%gref-cont num desc track+intro)
+(define-syntax-class (gref-cont num desc track+intro)
   #:description #f
   #:commit
   #:attributes (arity getter setter [preamble 1])
@@ -119,10 +99,10 @@ identifier with transformer binding (possibly in gref/set! space)"
                        (~do (define val (syntax-e this-syntax)))
                        (~fail #:unless (set!-packed? val)) ~!
                        (~var || (set!-packed-form val track+intro)))
-                 (~parse (~var || (%gref #:arity num #:desc desc))
+                 (~parse (~var || (gref #:arity num #:desc desc))
                          (track+intro this-syntax)))))
 
-(define-syntax-class (%gref #:arity [num 1]
+(define-syntax-class (gref #:arity [num 1]
                             #:desc [desc (make-gref-desc num)]
                             #:show [show desc])
   #:description show
@@ -141,7 +121,7 @@ identifier with transformer binding (possibly in gref/set! space)"
           (define use-intro (make-syntax-introducer #t))
           (define expanded
             (proc (use-intro (intro this-syntax 'add) 'add)))]
-    #:with (~var || (%gref-cont num desc track+intro)) expanded
+    #:with (~var || (gref-cont num desc track+intro)) expanded
     #:do [(define given (datum arity))]
     #:fail-unless (check-num num given) (make-mismatch desc given))
   (pattern id:id
@@ -154,7 +134,7 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:with setter (track (namer #'(lambda (val) (set! id val))))
     #:with (preamble ...) '()))
 
-(define-syntax-class (%grefs #:arity [num 1])
+(define-syntax-class (grefs #:arity [num 1])
   #:description #f
   #:commit
   #:attributes ([getter 1] [setter 1] [preamble 2])
@@ -163,24 +143,5 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:with (setter ...) '()
     #:with ((preamble ...) ...) '())
   (pattern ((~do (define desc (make-gref-desc num)))
-            (~var || (%gref #:arity num #:desc desc)) ...)))
+            (~var || (gref #:arity num #:desc desc)) ...)))
 
-(define-syntax-class (gref #:arity [num 1]
-                           #:desc [desc (make-gref-desc num)])
-  #:description desc
-  #:commit
-  #:attributes (arity getter setter [preamble 1])
-  (pattern (~or* (~and _
-                       (~fail #:when (syntax-transforming?)) ~!
-                       (~fail "\
-not within the dynamic extent of a macro transformation"))
-                 (~var || (%gref #:arity num #:desc desc
-                                 #:show #f)))))
-
-(define (get-set!-expansion ref-stx #:arity [num 1])
-  (syntax-parse ref-stx
-    #:context 'get-set!-expansion
-    [ref
-     #:declare ref (%gref #:arity num)
-     (values (datum ref.arity)
-             #'ref.getter #'ref.setter (datum (ref.preamble ...)))]))

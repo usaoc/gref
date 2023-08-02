@@ -34,7 +34,7 @@
          racket/contract/base
          racket/unsafe/ops
          syntax/parse/define
-         (for-syntax gref/private/expand
+         (for-syntax gref/private/expand/private
                      gref/private/helper
                      gref/private/property
                      racket/base
@@ -54,7 +54,7 @@
      (define-set!-expander name (syntax-parser . tail)))])
 
 (define-set!-parser values
-  [(who:id . ref:%grefs)
+  [(who:id . ref:grefs)
    #:do [(define arity (length (syntax->list #'ref)))]
    #:with (val ...) (make-vals arity)
    (define namer (make-namer #'who))

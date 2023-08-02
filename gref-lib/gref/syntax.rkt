@@ -16,7 +16,7 @@
 ;; <https://www.gnu.org/licenses/>.
 
 (module for-syntax racket/base
-  (require gref/private/expand
+  (require gref/private/expand/public
            gref/private/property
            racket/contract
            syntax/parse/experimental/provide

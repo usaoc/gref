@@ -20,7 +20,7 @@
 
 (require racket/unsafe/ops
          syntax/parse/define
-         (for-syntax gref/private/expand
+         (for-syntax gref/private/expand/private
                      gref/private/helper
                      racket/base
                      syntax/datum
@@ -54,7 +54,7 @@
   (define-splicing-syntax-class set!-pair
     #:description "set! assignment pair"
     #:attributes ([val 1] vals setter [preamble 1])
-    (pattern (~seq (~var || (%gref #:arity #f)) vals:expr)
+    (pattern (~seq (~var || (gref #:arity #f)) vals:expr)
       #:with (val ...) (make-vals (datum arity)))))
 
 (define-modify-parser set!
@@ -71,7 +71,7 @@
   (define-splicing-syntax-class set!-values-pair
     #:description "set!-values assignment pair"
     #:attributes ([val 1] vals [setter 1] [preamble 2])
-    (pattern (~seq (~and :%grefs ref) vals:expr)
+    (pattern (~seq (~and :grefs ref) vals:expr)
       #:do [(define arity (length (syntax->list #'ref)))]
       #:with (val ...) (make-vals arity))))
 
@@ -137,10 +137,10 @@
   [(_:id maybe-ref0 maybe-ref ... maybe-vals)
    #:cut
    #:with ref0 #'maybe-ref0
-   #:declare ref0 (%gref #:arity #f)
+   #:declare ref0 (gref #:arity #f)
    #:do [(define arity (datum ref0.arity))]
    #:with ref (datum (maybe-ref ...))
-   #:declare ref (%grefs #:arity arity)
+   #:declare ref (grefs #:arity arity)
    #:with vals:expr #'maybe-vals
    #:with (val ...) (make-vals arity)
    (syntax/loc this-syntax
@@ -152,10 +152,10 @@
   [(_:id maybe-ref0 maybe-ref ...+)
    #:cut
    #:with ref0 #'maybe-ref0
-   #:declare ref0 (%gref #:arity #f)
+   #:declare ref0 (gref #:arity #f)
    #:do [(define arity (datum ref0.arity))]
    #:with ref (datum (maybe-ref ...))
-   #:declare ref (%grefs #:arity arity)
+   #:declare ref (grefs #:arity arity)
    #:with (val ...) (make-vals arity)
    (syntax/loc this-syntax
      (shift!-fold ((ref0.preamble ...) (ref.preamble ...) ...)
@@ -180,7 +180,7 @@
    #:with more-idx (datum->syntax #'here (add1 arity-num) #'arity)
    (syntax/loc this-syntax
      (define-modify-parser name
-       [(_:id proc-expr:expr (~var arg-expr0 expr) ... ref:%gref
+       [(_:id proc-expr:expr (~var arg-expr0 expr) ... ref:gref
               maybe-arg (... ...) . maybe-rest)
         #:cut
         #:with arg (syntax/loc this-syntax (maybe-arg (... ...)))
@@ -206,7 +206,7 @@
 
 (define-for-syntax (make-inc! inc)
   (syntax-parser
-    [(_:id ref:%gref (~optional delta-expr))
+    [(_:id ref:gref (~optional delta-expr))
      #:declare delta-expr (maybe-expr/c #'number?)
      #:with val (syntax/loc #'ref (ref.getter))
      #:declare val (maybe-expr/c #'number?)
@@ -225,7 +225,7 @@
 
 (define-for-syntax (make-push! cons)
   (syntax-parser
-    [(_:id val-expr:expr ref:%gref)
+    [(_:id val-expr:expr ref:gref)
      #:with cons cons
      (syntax/loc this-syntax
        (begin
@@ -241,7 +241,7 @@
 
 (define-for-syntax (make-pop! pair? car cdr)
   (syntax-parser
-    [(_:id ref:%gref)
+    [(_:id ref:gref)
      #:with val (syntax/loc #'ref (ref.getter))
      #:declare val (maybe-expr/c pair?)
      #:with car car
