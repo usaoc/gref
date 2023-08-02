@@ -73,18 +73,20 @@
                                   #f]))
               kw))]
     #:fail-when (find-dup) "duplicate keyword"
-    #:do [(define kw+idxs
-            (for/fold ([kw+idxs '()]
-                       [idx idx]
-                       #:result kw+idxs)
-                      ([kw (in-list (datum (kw ...)))])
-              (define-values (kw/idx next-idx)
-                (if kw
-                    (values (syntax-e kw) idx)
-                    (values idx (add1 idx))))
-              (values (cons kw/idx kw+idxs) next-idx)))]
-    #:with (val ...) (hash-ref! args-table kw+idxs
-                                (lambda () (make-args kw+idxs)))))
+    #:do [(define (make-vals)
+            (define kw+idxs
+              (for/fold ([kw+idxs '()]
+                         [idx idx]
+                         #:result kw+idxs)
+                        ([kw (in-list (datum (kw ...)))])
+                (define-values (kw/idx next-idx)
+                  (if kw
+                      (values (syntax-e kw) idx)
+                      (values idx (add1 idx))))
+                (values (cons kw/idx kw+idxs) next-idx)))
+            (define (make) (make-args kw+idxs))
+            (hash-ref! args-table kw+idxs make))]
+    #:with (val ...) (make-vals)))
 
 (define-syntax-class (maybe-expr/c contract-expr)
   #:commit

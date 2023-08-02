@@ -98,7 +98,10 @@ identifier with transformer binding (possibly in gref/set! space)"
   (pattern (~or* (~and _
                        (~do (define val (syntax-e this-syntax)))
                        (~fail #:unless (set!-packed? val)) ~!
-                       (~var || (set!-packed-form val track+intro)))
+                       (~var || (set!-packed-form val track+intro))
+                       (~do (define given (datum arity)))
+                       (~fail #:unless (check-num num given)
+                              (make-mismatch desc given)))
                  (~parse (~var || (gref #:arity num #:desc desc))
                          (track+intro this-syntax)))))
 
@@ -114,16 +117,15 @@ identifier with transformer binding (possibly in gref/set! space)"
           (define val (datum ref.val))
           (define make-proc (set!-expander-ref val get-unbound))]
     #:fail-when (and (unbound? make-proc) id) (make-illegal val)
-    #:do [(define proc (make-proc val))
-          (define track (make-track this-syntax id))
-          (define intro (make-syntax-introducer))
-          (define (track+intro stx) (track (intro stx)))
-          (define use-intro (make-syntax-introducer #t))
-          (define expanded
+    #:do [(define intro (make-syntax-introducer))
+          (define (make-track+intro)
+            (define track (make-track this-syntax id))
+            (lambda (stx) (track (intro stx))))
+          (define (expand)
+            (define proc (make-proc val))
+            (define use-intro (make-syntax-introducer #t))
             (proc (use-intro (intro this-syntax 'add) 'add)))]
-    #:with (~var || (gref-cont num desc track+intro)) expanded
-    #:do [(define given (datum arity))]
-    #:fail-unless (check-num num given) (make-mismatch desc given))
+    #:with (~var || (gref-cont num desc (make-track+intro))) (expand))
   (pattern id:id
     #:cut
     #:fail-unless (check-num num 1) (make-mismatch desc 1)
