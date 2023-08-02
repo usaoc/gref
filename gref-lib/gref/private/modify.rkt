@@ -15,46 +15,23 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(require (for-syntax racket/base
-                     racket/provide-transform
-                     syntax/datum
-                     syntax/parse))
-(define-for-syntax modify-intro (make-syntax-introducer #t))
-(define-for-syntax (in-modify-space id) (modify-intro id 'add))
-(define-for-syntax (expand-modify-out stx modes)
-  (syntax-parse stx
-    [(_:id name:id ...)
-     #:with (out-name ...) (map in-modify-space (datum (name ...)))
-     (expand-export
-      (syntax/loc this-syntax (combine-out out-name ...))
-      modes)]))
-(define-syntax modify-out
-  (make-provide-transformer expand-modify-out))
-(provide (modify-out
-          set! set!-values pset! pset!-values shift! rotate!
-          call! call2! inc! dec! push! mpush! pop! mpop!))
+(provide set! set!-values pset! pset!-values shift! rotate!
+         call! call2! inc! dec! push! mpush! pop! mpop!)
 
 (require racket/unsafe/ops
          syntax/parse/define
          (for-syntax gref/private/expand
                      gref/private/helper
                      racket/base
+                     syntax/datum
                      syntax/parse
                      syntax/parse/experimental/template
                      syntax/transformer))
 
 (define-syntax-parser define-modify-syntax
   [(_:id name:id proc:expr)
-   #:with proc-name (syntax-local-introduce #'name)
-   #:with proc-def (syntax/loc this-syntax
-                     (define-for-syntax proc-name proc))
-   #:with def (syntax/loc this-syntax
-                (define-syntax name proc-name))
-   #:with out-name (in-modify-space #'name)
-   #:with out-def (syntax/loc this-syntax
-                    (define-syntax out-name
-                      (make-expression-transformer proc-name)))
-   #'(begin proc-def def out-def)])
+   (syntax/loc this-syntax
+     (define-syntax name (make-expression-transformer proc)))])
 
 (define-syntax-parser define-modify-parser
   [(_:id name:id . tail)

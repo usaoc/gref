@@ -71,12 +71,6 @@ identifier with transformer binding (possibly in gref/set! space)"
     #:with id set!-id
     #:attr val val))
 
-(define-syntax-class binding
-  #:description "let-values binding pair"
-  #:commit
-  #:attributes ()
-  (pattern [(_:id ...) _:expr]))
-
 (struct set!-packed (num getter setter preambles))
 
 (define (set!-pack getter setter #:arity [num 1] #:source [src #f]
