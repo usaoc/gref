@@ -15,14 +15,13 @@
 ;; along with this program.  If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-(provide set!-pack make-set!-functional get-set!-expansion gref)
+(provide set!-pack make-set!-functional gref get-set!-expansion)
 
-(require gref/private/expand/private
-         gref/private/helper
+(require gref/private/helper
          gref/private/property
          syntax/datum
          syntax/parse
-         (only-in gref/private/expand/private
+         (rename-in gref/private/expand/private
            [gref unsafe-gref])
          (for-template racket/base))
 

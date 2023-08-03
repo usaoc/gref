@@ -22,14 +22,7 @@
            syntax/parse/experimental/provide
            syntax/srcloc)
   (define maybe-arity/c (or/c #f exact-nonnegative-integer?))
-  (provide maybe-arity/c
-           (contract-out
-             [get-set!-expansion
-              (->* (syntax?) (#:arity maybe-arity/c)
-                   #:pre/desc (or (syntax-transforming?)
-                                  "not currently expanding")
-                   (values exact-nonnegative-integer?
-                           syntax? syntax? (listof syntax?)))]
+  (provide (contract-out
              [set!-pack
               (->* (syntax? syntax?)
                    (#:arity exact-nonnegative-integer?
@@ -38,21 +31,28 @@
                    syntax?)]
              [prop:set!-expander
               (struct-type-property/c
-               (-> set!-expander? (-> syntax? syntax?)))]
+               (-> set!-expander? (-> syntax? syntax?)))])
+           set!-expander?
+           (contract-out
              [make-set!-expander
               (-> (-> syntax? syntax?) set!-expander?)]
              [make-set!-functional
               (->* (syntax? syntax?)
                    (#:arity exact-nonnegative-integer?)
-                   set!-expander?)]))
+                   set!-expander?)])
+           maybe-arity/c)
   (provide-syntax-class/contract
-    [gref (syntax-class/c () (#:arity maybe-arity/c))]))
+    [gref (syntax-class/c () (#:arity maybe-arity/c))])
+  (provide (contract-out
+             [get-set!-expansion
+              (->* (syntax?) (#:arity maybe-arity/c)
+                   #:pre/desc (or (syntax-transforming?)
+                                  "not currently expanding")
+                   (values exact-nonnegative-integer?
+                           syntax? syntax? (listof syntax?)))])))
 
 (require gref/private/define
-         (for-syntax (only-in gref/private/property set!-expander?)
-                     (submod "." for-syntax)
-                     (rename-in (submod "." for-syntax)
-                                [gref generalized-reference])))
+         (for-syntax (submod "." for-syntax)))
 (provide (all-from-out gref/private/define)
-         (for-syntax (all-from-out gref/private/property)
-                     (all-from-out (submod "." for-syntax))))
+         (for-syntax (all-from-out (submod "." for-syntax))
+                     (rename-out [gref generalized-reference])))
