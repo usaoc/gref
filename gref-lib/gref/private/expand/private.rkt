@@ -48,9 +48,10 @@
   value at phase " (number->string (add1 (syntax-local-phase-level)))
    ": " ((error-value->string-handler) val (error-print-width))))
 
-(define ((make-track orig-stx id-stx) new-stx)
-  (syntax-track-origin new-stx orig-stx
-                       (syntax-local-introduce id-stx)))
+(define (make-track orig-stx id-stx)
+  (define orig-id-stx (syntax-local-introduce id-stx))
+  (lambda (new-stx)
+    (syntax-track-origin new-stx orig-stx orig-id-stx)))
 
 (define unbound #s(unbound))
 
