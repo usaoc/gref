@@ -17,7 +17,6 @@
  <https://www.gnu.org/licenses/>.}
 
 @(require scribblings/gref/bib
-          scribblings/gref/def
           scribblings/gref/example
           scribblings/gref/lib
           scribblings/gref/tech
@@ -36,12 +35,12 @@ the following @other-doc[@lib-path["algol60/algol60"]] program:
 @codeblock[#:keep-lang-line? #f]{
  #lang algol60
  begin
-   integer array foo[0:0];
-   foo[0] := 1;
-   printnln(foo[0])
+   integer array intbox[0:0];
+   intbox[0] := 1;
+   printnln(intbox[0])
  end}
 
-Above, @tt{foo[0]} is an @tech{l-value} that @tech{represents} a
+Above, @tt{intbox[0]} is an @tech{l-value} that @tech{represents} a
 @tech{location}, and thus can be both read and write.  The concept of
 @deftech{locations} is already defined in Racket (see
 @secref[#:doc rkt-ref "vars-and-locs"]), so it is not difficult to
@@ -133,15 +132,12 @@ Racket's convention (see @secref[#:doc rkt-guide "void+undefined"]).
                                   printing-unbox
                                   printing-set-box!))
                (define box-of-box
-                 (printing-box (printing-box #hasheq((foo . "bar"))
+                 (printing-box (printing-box #hasheq((key . "val"))
                                              #:name 'inner)
                                #:name 'outer))
-               (eval:alts
+               (code:gref
                 (call! hash-update
-                       (#,(racket/set! unbox) (unbox box-of-box)) 'foo
-                       (compose1 string->symbol string-upcase))
-                (call! hash-update
-                       (unbox (unbox box-of-box)) 'foo
+                       (#,unbox (unbox box-of-box)) 'key
                        (compose1 string->symbol string-upcase)))
                (unbox (unbox box-of-box))]
 

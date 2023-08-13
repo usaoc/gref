@@ -18,6 +18,7 @@
 (provide examples/gref)
 
 (require scribble/example
+         scribblings/gref/def
          syntax/parse/define
          (for-syntax racket/base
                      syntax/parse))
@@ -36,10 +37,31 @@
 (begin-for-syntax
   (define-splicing-syntax-class label
     #:attributes (expr)
-    (pattern (~optional (~seq #:label expr:expr)))))
+    (pattern (~optional (~seq #:label expr:expr))))
+  (define-syntax-class subform/gref
+    #:datum-literals (unsyntax)
+    #:commit
+    #:attributes (show eval)
+    (pattern #,form
+      #:with show (syntax/loc this-syntax #,(racket/set! form))
+      #:with eval (syntax/loc this-syntax form))
+    (pattern (subform:subform/gref ...)
+      #:with show (syntax/loc this-syntax (subform.show ...))
+      #:with eval (syntax/loc this-syntax (subform.eval ...)))
+    (pattern (~and show eval)))
+  (define-syntax-class form/gref
+    #:datum-literals (code:gref)
+    #:commit
+    #:attributes (form)
+    (pattern (code:gref ~! subform:subform/gref)
+      #:with form (syntax/loc this-syntax
+                    (eval:alts subform.show subform.eval)))
+    (pattern form)))
 
 (define-syntax-parser examples/gref
-  [(_:id label:label expr:expr ...)
+  [(_:id label:label form:form/gref ...)
    #:with eval (or lifted-eval (lift-eval!))
    (syntax/loc this-syntax
-     (examples #:eval eval (~? (~@ #:label label.expr)) expr ...))])
+     (examples #:eval eval
+               (~? (~@ #:label label.expr))
+               form.form ...))])

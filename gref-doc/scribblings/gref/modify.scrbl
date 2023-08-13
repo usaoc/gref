@@ -19,12 +19,12 @@
 @(require scribblings/gref/example
           scribblings/gref/lib
           scribblings/gref/tech
-          (for-label gref/syntax
+          (for-label gref/base
+                     gref/syntax
                      racket/class
                      racket/contract/base
                      syntax/parse
-                     (except-in racket/base ... set! set!-values)
-                     (only-space-in #f gref/base)))
+                     (except-in racket/base ... set! set!-values)))
 
 @title[#:tag "modify"]{Modify Macros}
 
@@ -55,20 +55,18 @@ is always @|void-const|.
  @deftech{parallelly} before @tech/rep{storing} to @racket[ref]s in an
  unspecified @tech/rep{order}.
 
- @examples/gref[(define foo (box 1))
-                (define bar (box 2))
-                (set! (unbox* foo) (unbox* bar)
-                      (unbox* bar) (unbox* foo))
-                foo
-                bar]
+ @examples/gref[(define mpair (mcons 1 2))
+                (code:gref
+                 (set! (#,mcar mpair) (mcdr mpair)
+                       (#,mcdr mpair) (mcar mpair)))
+                mpair]
 
  @examples/gref[#:label "vs."
-                (define foo (box 1))
-                (define bar (box 2))
-                (pset! (unbox* foo) (unbox* bar)
-                       (unbox* bar) (unbox* foo))
-                foo
-                bar]}
+                (define mpair (mcons 1 2))
+                (code:gref
+                 (pset! (#,mcar mpair) (mcdr mpair)
+                        (#,mcdr mpair) (mcar mpair)))
+                mpair]}
 
 @defform[(pset!-values pair ...+)
          #:grammar [(pair (code:line (ref ...) vals))
@@ -85,11 +83,10 @@ is always @|void-const|.
  as if it were one) to the @math{n}th @tech/rep{reference}.  The
  @tech/rep{arity} of @racket[ref0] is used as @var[number].
 
- @examples/gref[(define foo (box 1))
-                (define bar (box 2))
-                (shift! (unbox* foo) (unbox* bar) 3)
-                foo
-                bar]}
+ @examples/gref[(define mpair (mcons 1 2))
+                (code:gref
+                 (shift! (#,mcar mpair) (#,mcdr mpair) 3))
+                mpair]}
 
 @defform[(rotate! ref0 ref ...+)
          #:grammar [(ref0 @#,racket[(gref #:arity #f)])
@@ -99,13 +96,12 @@ is always @|void-const|.
  @tech/rep{reference} to the @math{n}th @tech/rep{reference}.  The
  @tech/rep{arity} of @racket[ref0] is used as @var[number].
 
- @examples/gref[(define foo (box 1))
-                (define bar (box 2))
-                (define baz (box 3))
-                (rotate! (unbox* foo) (unbox* bar) (unbox* baz))
-                foo
-                bar
-                baz]}
+ @examples/gref[(define mpair (mcons 1 2))
+                (define val 3)
+                (code:gref
+                 (rotate! (#,mcar mpair) (#,mcdr mpair) val))
+                val
+                mpair]}
 
 @defform*[[(call! proc ref arg ...)
            (call! proc ref arg ... . arg-list-expr)]
