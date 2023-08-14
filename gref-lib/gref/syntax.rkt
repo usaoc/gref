@@ -21,7 +21,8 @@
            racket/contract
            syntax/parse/experimental/provide
            syntax/srcloc)
-  (define maybe-arity/c (or/c #f exact-nonnegative-integer?))
+  (define (maybe-arity/c num)
+    (or (not num) (exact-nonnegative-integer? num)))
   (provide (contract-out
              [set!-pack
               (->* (syntax? syntax?)
