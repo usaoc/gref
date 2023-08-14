@@ -128,9 +128,9 @@ Racket's convention (see @secref[#:doc rkt-guide "void+undefined"]).
                  (define (printing-set-box! bx val)
                    (printf "set-box!: ~a\n" name)
                    val)
-                 (impersonate-box (box val)
-                                  printing-unbox
-                                  printing-set-box!))
+                 (chaperone-box (box val)
+                                printing-unbox
+                                printing-set-box!))
                (define box-of-box
                  (printing-box (printing-box #hasheq((key . "val"))
                                              #:name 'inner)
