@@ -53,7 +53,7 @@
         [else (indexed-id "arg" kw/idx #:source #'here)]))
     (cons arg args)))
 
-(define-syntax-class (args idx)
+(define-syntax-class args
   #:description "#%app arguments"
   #:commit
   #:attributes ([kw 1] [expr 1] [val 1])
@@ -64,7 +64,7 @@
     #:do [(define (find-dup/make-vals)
             (define kw+idxs
               (for/fold ([kw+idxs '()]
-                         [idx idx]
+                         [idx 0]
                          #:result kw+idxs)
                         ([kw (in-list (datum (kw ...)))])
                 (define-values (kw/idx next-idx)

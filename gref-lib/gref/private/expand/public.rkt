@@ -31,8 +31,7 @@
   (define/syntax-parse (val ...) (make-vals num))
   (make-set!-expander
    (syntax-parser
-     [(who:id . arg)
-      #:declare arg (args 0)
+     [(who:id . arg:args)
       (define namer (make-namer #'who))
       (apply set!-pack
              (namer #'(lambda () (getter arg.val ...)))

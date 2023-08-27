@@ -175,27 +175,25 @@
 (define-syntax-parser define-call!
   [(_:id name:id arity:exact-nonnegative-integer)
    #:do [(define arity-num (syntax-e #'arity))]
-   #:with (arg0 ...) (make-ids "arg" arity-num)
-   #:with (arg-expr0 ...) (make-ids "arg-expr" arity-num)
-   #:with more-idx (datum->syntax #'here (add1 arity-num) #'arity)
+   #:with (pre-arg ...) (make-ids "pre-arg" arity-num)
+   #:with (pre-arg-expr ...) (make-ids "pre-arg-expr" arity-num)
    (syntax/loc this-syntax
      (define-modify-parser name
-       [(_:id proc-expr:expr (~var arg-expr0 expr) ... ref:gref
+       [(_:id proc-expr:expr (~var pre-arg-expr expr) ... ref:gref
               maybe-arg (... ...) . maybe-rest)
         #:cut
-        #:with arg (syntax/loc this-syntax (maybe-arg (... ...)))
-        #:declare arg (args more-idx)
+        #:with arg:args (syntax/loc this-syntax (maybe-arg (... ...)))
         #:with rest:rest #'maybe-rest
         (syntax/loc this-syntax
           (begin
             (let ()
               (define proc proc-expr)
-              (define arg0 arg-expr0) ...
+              (define pre-arg pre-arg-expr) ...
               ref.preamble (... ...)
               (define arg.val arg.expr) (... ...)
               (... (~? (define rest.val rest.expr)))
               (ref.setter
-               (rest.app proc arg0 ... (ref.getter)
+               (rest.app proc pre-arg ... (ref.getter)
                          (... (~@ (~? arg.kw) arg.val)) (... ...)
                          (... (~? rest.val)))))
             (void)))]))])
