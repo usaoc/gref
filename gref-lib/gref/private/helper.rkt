@@ -61,19 +61,7 @@
                     (~seq kw:keyword ~! expr:expr))
                   expr)
             ...)
-    #:do [(define (find-dup)
-            (define table (make-hasheq))
-            (for/first ([kw (in-list (datum (kw ...)))]
-                        #:when kw
-                        #:do [(define kw-datum (syntax-e kw))]
-                        #:when (cond
-                                 [(hash-ref table kw-datum #f)]
-                                 [else
-                                  (hash-set! table kw-datum #t)
-                                  #f]))
-              kw))]
-    #:fail-when (find-dup) "duplicate keyword"
-    #:do [(define (make-vals)
+    #:do [(define (find-dup/make-vals)
             (define kw+idxs
               (for/fold ([kw+idxs '()]
                          [idx idx]
@@ -84,9 +72,23 @@
                       (values (syntax-e kw) idx)
                       (values idx (add1 idx))))
                 (values (cons kw/idx kw+idxs) next-idx)))
-            (define (make) (make-args kw+idxs))
-            (hash-ref! args-table kw+idxs make))]
-    #:with (val ...) (make-vals)))
+            (define (find/make)
+              (define (find)
+                (define table (make-hasheq))
+                (for/first ([kw (in-list (datum (kw ...)))]
+                            #:when kw
+                            #:do [(define kw-datum (syntax-e kw))]
+                            #:when (cond
+                                     [(hash-ref table kw-datum #f)]
+                                     [else
+                                      (hash-set! table kw-datum #t)
+                                      #f]))
+                  kw))
+              (or (find) (make-args kw+idxs)))
+            (hash-ref! args-table kw+idxs find/make))
+          (define dup/vals (find-dup/make-vals))]
+    #:fail-when (and (syntax? dup/vals) dup/vals) "duplicate keyword"
+    #:with (val ...) dup/vals))
 
 (define-syntax-class (maybe-expr/c contract-expr)
   #:commit
