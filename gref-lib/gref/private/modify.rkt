@@ -202,29 +202,29 @@
 
 (define-call! call2! 1)
 
-(define-for-syntax (make-inc! inc)
+(define-for-syntax (make-inc! +-id)
+  (define/syntax-parse + +-id)
   (syntax-parser
     [(_:id ref:gref (~optional delta-expr))
      #:declare delta-expr (maybe-expr/c #'number?)
      #:with val (syntax/loc #'ref (ref.getter))
      #:declare val (maybe-expr/c #'number?)
-     #:with inc inc
      (syntax/loc this-syntax
        (begin
          (let ()
            ref.preamble ...
            (define delta (~? delta-expr.c 1))
-           (ref.setter (inc val.c delta)))
+           (ref.setter (+ val.c delta)))
          (void)))]))
 
 (define-modify-syntax inc! (make-inc! #'+))
 
 (define-modify-syntax dec! (make-inc! #'-))
 
-(define-for-syntax (make-push! cons)
+(define-for-syntax (make-push! cons-id)
+  (define/syntax-parse cons cons-id)
   (syntax-parser
     [(_:id val-expr:expr ref:gref)
-     #:with cons cons
      (syntax/loc this-syntax
        (begin
          (let ()
@@ -237,13 +237,13 @@
 
 (define-modify-syntax mpush! (make-push! #'mcons))
 
-(define-for-syntax (make-pop! pair? car cdr)
+(define-for-syntax (make-pop! pair?-id car-id cdr-id)
+  (define/syntax-parse car car-id)
+  (define/syntax-parse cdr cdr-id)
   (syntax-parser
     [(_:id ref:gref)
      #:with val (syntax/loc #'ref (ref.getter))
-     #:declare val (maybe-expr/c pair?)
-     #:with car car
-     #:with cdr cdr
+     #:declare val (maybe-expr/c pair?-id)
      (syntax/loc this-syntax
        (let ()
          ref.preamble ...

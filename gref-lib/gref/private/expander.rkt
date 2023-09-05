@@ -64,12 +64,12 @@
           (datum (ref.preamble ... ...))
           #:arity arity)])
 
-(define-for-syntax (make-mcar mcar set-mcar!)
+(define-for-syntax (make-mcar mcar-id set-mcar!-id)
+  (define/syntax-parse mcar mcar-id)
+  (define/syntax-parse set-mcar! set-mcar!-id)
   (syntax-parser
     [(who:id pair-expr)
      #:declare pair-expr (maybe-expr/c #'mpair?)
-     #:with mcar mcar
-     #:with set-mcar! set-mcar!
      (define namer (make-namer #'who))
      (set!-pack (namer #'(lambda () (mcar pair)))
                 (namer #'(lambda (val) (set-mcar! pair val)))
@@ -183,14 +183,14 @@
 
 (define-vector-ref vector* #:type "vector" #:vector/c vector*/c)
 
-(define-for-syntax (make-unbox unbox set-box! box/c)
+(define-for-syntax (make-unbox unbox-id set-box!-id box/c-id)
+  (define/syntax-parse unbox unbox-id)
+  (define/syntax-parse set-box! set-box!-id)
   (syntax-parser
     [(who:id box-expr)
-     #:declare box-expr (maybe-expr/c box/c)
+     #:declare box-expr (maybe-expr/c box/c-id)
      #:with mutable-box (syntax/loc #'box-expr box)
      #:declare mutable-box (maybe-expr/c #'mutable/c)
-     #:with unbox unbox
-     #:with set-box! set-box!
      (define namer (make-namer #'who))
      (set!-pack (namer #'(lambda () (unbox box)))
                 (namer #'(lambda (val) (set-box! mutable-box.c val)))
