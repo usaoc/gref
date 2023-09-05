@@ -107,8 +107,8 @@ identifier with transformer binding (possibly in gref/set! space)"
                          (track+intro this-syntax)))))
 
 (define-syntax-class (gref #:arity [num 1]
-                            #:desc [desc (make-gref-desc num)]
-                            #:show [show desc])
+                           #:desc [desc (make-gref-desc num)]
+                           #:show [show desc])
   #:description show
   #:commit
   #:attributes (arity getter setter [preamble 1])
