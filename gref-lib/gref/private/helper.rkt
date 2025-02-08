@@ -30,7 +30,7 @@
   (for/list ([idx (in-range end)])
     (indexed-id pfix idx #:source #'here)))
 
-(define vals-table (make-hasheqv))
+(define vals-table (make-ephemeron-hasheqv))
 
 (define (make-vals end)
   (hash-ref! vals-table end (lambda () (make-ids "val" end))))
@@ -39,7 +39,7 @@
   (define name (syntax-e name-id))
   (lambda (stx) (syntax-property stx 'inferred-name name)))
 
-(define args-table (make-hash))
+(define args-table (make-ephemeron-hash))
 
 (define (make-args kw+idxs)
   (for/fold ([args '()])

@@ -25,7 +25,7 @@
          syntax/parse
          (for-template racket/base))
 
-(define gref-desc-table (make-hasheqv))
+(define gref-desc-table (make-ephemeron-hasheqv))
 
 (define (make-gref-desc num)
   (define (make-desc)
