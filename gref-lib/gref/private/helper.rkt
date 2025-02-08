@@ -74,16 +74,16 @@
                 (values (cons kw/idx kw+idxs) next-idx)))
             (define (find/make)
               (define (find)
-                (define table (make-hasheq))
-                (for/first ([kw (in-list (datum (kw ...)))]
-                            #:when kw
-                            #:do [(define kw-datum (syntax-e kw))]
-                            #:when (cond
-                                     [(hash-ref table kw-datum #f)]
-                                     [else
-                                      (hash-set! table kw-datum #t)
-                                      #f]))
-                  kw))
+                (for/fold ([seen-kws #hasheq()]
+                           [dup-kw #f]
+                           #:result dup-kw)
+                          ([kw (in-list (datum (kw ...)))]
+                           #:when kw)
+                  #:break dup-kw
+                  (define kw-datum (syntax-e kw))
+                  (if (hash-ref seen-kws kw-datum #f)
+                      (values seen-kws kw)
+                      (values (hash-set seen-kws kw-datum #t) #f))))
               (or (find) (make-args kw+idxs)))
             (hash-ref! args-table kw+idxs find/make))
           (define dup/vals (find-dup/make-vals))]
