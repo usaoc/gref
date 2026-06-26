@@ -20,7 +20,7 @@
          rackunit/spec
          syntax/parse
          syntax/parse/define
-         tests/gref/helper
+         gref/tests/helper
          (for-syntax racket/base
                      syntax/parse)
          (for-template gref/syntax))

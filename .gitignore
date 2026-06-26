@@ -6,12 +6,12 @@
 !README*
 !gref/
 !gref-doc/
-!gref-doc/scribblings/
-!gref-doc/scribblings/gref/
+!gref-doc/gref/
+!gref-doc/gref/scribblings/
 !gref-lib/
 !gref-lib/gref/
 !gref-lib/gref/private/
 !gref-lib/gref/private/expand/
 !gref-test/
-!gref-test/tests/
-!gref-test/tests/gref/
+!gref-test/gref/
+!gref-test/gref/tests/

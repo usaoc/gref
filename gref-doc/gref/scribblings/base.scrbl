@@ -16,7 +16,7 @@
  along with this program.  If not, see
  <https://www.gnu.org/licenses/>.}
 
-@(require scribblings/gref/include
+@(require gref/scribblings/include
           (for-label racket/base))
 
 @title[#:tag "base"]{The Base Module}

@@ -31,7 +31,7 @@
       #:do [(define sub-path
               (symbol->immutable-string (syntax-e this-syntax)))
             (define full-path
-              (string-append-immutable "scribblings/gref/"
+              (string-append-immutable "gref/scribblings/"
                                        sub-path ".scrbl"))]
       #:with path (datum->syntax #f full-path #'here)
       #:with inc (syntax/loc out (include-section (lib path))))))

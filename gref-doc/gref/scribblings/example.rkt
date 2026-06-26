@@ -18,7 +18,7 @@
 (provide examples/gref)
 
 (require scribble/example
-         scribblings/gref/def
+         gref/scribblings/def
          syntax/parse/define
          (for-syntax racket/base
                      syntax/parse))

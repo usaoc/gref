@@ -16,10 +16,10 @@
  along with this program.  If not, see
  <https://www.gnu.org/licenses/>.}
 
-@(require scribblings/gref/bib
-          scribblings/gref/include
-          scribblings/gref/lib
-          scribblings/gref/tech)
+@(require gref/scribblings/bib
+          gref/scribblings/include
+          gref/scribblings/lib
+          gref/scribblings/tech)
 
 @title{Gref: Generalized References for Racket}
 @author{Wing Hei Chan}

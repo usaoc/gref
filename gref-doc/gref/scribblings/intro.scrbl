@@ -16,10 +16,10 @@
  along with this program.  If not, see
  <https://www.gnu.org/licenses/>.}
 
-@(require scribblings/gref/bib
-          scribblings/gref/example
-          scribblings/gref/lib
-          scribblings/gref/tech
+@(require gref/scribblings/bib
+          gref/scribblings/example
+          gref/scribblings/lib
+          gref/scribblings/tech
           (for-label gref/base
                      racket/contract/base
                      (except-in racket/base ... set! set!-values)

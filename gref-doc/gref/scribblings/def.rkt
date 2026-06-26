@@ -19,7 +19,7 @@
          provided-for-syntax racket/set!)
 
 (require scribble/manual
-         scribblings/gref/lib
+         gref/scribblings/lib
          syntax/parse/define
          (for-label gref/base
                     (only-in racket/base for-syntax))

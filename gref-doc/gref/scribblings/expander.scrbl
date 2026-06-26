@@ -16,9 +16,9 @@
  along with this program.  If not, see
  <https://www.gnu.org/licenses/>.}
 
-@(require scribblings/gref/def
-          scribblings/gref/lib
-          scribblings/gref/tech
+@(require gref/scribblings/def
+          gref/scribblings/lib
+          gref/scribblings/tech
           (for-label gref/syntax
                      racket/contract/base
                      (except-in racket/base ... set!)

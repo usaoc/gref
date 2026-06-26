@@ -19,7 +19,7 @@
          racket/fixnum
          racket/string
          rackunit/spec
-         tests/gref/helper)
+         gref/tests/helper)
 
 (describe "variable"
   (it "acts as a reference"
